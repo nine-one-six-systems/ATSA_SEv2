@@ -1,0 +1,1 @@
+Advanced Tax Strategy Assessment (ATSA) that analyzes a person's taxable income to determine the most advanced strategy possible to limit taxable exposure. It also provides functional strategies to reduce taxable income and maximize income.

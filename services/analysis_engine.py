@@ -1,5 +1,6 @@
 from models import db, ExtractedData, AnalysisResult, Client
 from services.irs_reference import IRSReferenceService
+from services.tax_strategies import TaxStrategiesService
 from decimal import Decimal
 
 class AnalysisEngine:
@@ -35,15 +36,8 @@ class AnalysisEngine:
         # Generate summary
         summary = AnalysisEngine._calculate_summary(data_by_form, client)
         
-        # Generate strategies
-        strategies = []
-        
-        # Analyze income and generate strategies
-        strategies.extend(AnalysisEngine._analyze_retirement_strategies(data_by_form, client))
-        strategies.extend(AnalysisEngine._analyze_business_strategies(data_by_form, client))
-        strategies.extend(AnalysisEngine._analyze_deduction_strategies(data_by_form, client))
-        strategies.extend(AnalysisEngine._analyze_investment_strategies(data_by_form, client))
-        strategies.extend(AnalysisEngine._analyze_education_strategies(data_by_form, client))
+        # Generate strategies using comprehensive tax strategies service
+        strategies = TaxStrategiesService.analyze_all_strategies(data_by_form, client)
         
         # Store strategies in database
         for strategy in strategies:

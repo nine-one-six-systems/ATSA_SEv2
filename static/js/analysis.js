@@ -230,13 +230,12 @@ async function loadAnalyses() {
         const analyses = result.analyses || [];
         const summary = result.summary;
         
-        const strategiesSection = document.getElementById('strategies-section');
         const resultsDiv = document.getElementById('analysis-results');
         
-        // Display summary if available
+        // Display summary if available (this creates the strategies-section div)
         if (summary) {
             displaySummary(summary);
-        } else if (resultsDiv && !strategiesSection) {
+        } else if (resultsDiv) {
             // No summary available, show message
             resultsDiv.innerHTML = `
                 <div class="summary-section">
@@ -247,6 +246,9 @@ async function loadAnalyses() {
                 </div>
             `;
         }
+        
+        // Get strategies-section AFTER displaySummary() creates it
+        const strategiesSection = document.getElementById('strategies-section');
         
         // Display strategies
         if (strategiesSection) {
@@ -265,60 +267,164 @@ async function loadAnalyses() {
                     <div class="section">
                         <h3>Tax Strategy Recommendations</h3>
                         <p class="total-savings">Total Potential Savings: <strong>$${totalSavings.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></p>
+                        <p style="font-size: 0.85rem; color: #6c757d; margin-top: 0.5rem;">📊 Enhanced Analysis v2.0 - Showing detailed strategy status, benefits, and forms analyzed</p>
                     </div>
-                    ${analyses.map(analysis => `
-                        <div class="strategy-card priority-${analysis.priority}">
-                            <div class="strategy-header">
-                                <div class="strategy-name">${analysis.strategy_name}</div>
-                                <div class="potential-savings">$${formatCurrency(analysis.potential_savings)}</div>
-                            </div>
-                            <div class="strategy-description">${analysis.strategy_description}</div>
-                            <div class="irs-reference">
-                                <strong>IRS Reference:</strong> 
-                                <a href="${analysis.irs_url || '#'}" target="_blank">${analysis.irs_section}</a>
-                                ${analysis.irs_code ? ` (${analysis.irs_code})` : ''}
-                            </div>
-                        </div>
-                    `).join('')}
+                    ${analyses.map(analysis => renderStrategyCard(analysis)).join('')}
                 `;
             }
-        } else if (resultsDiv && !summary) {
-            // No summary section exists, show strategies in main results div
+        } else if (resultsDiv) {
+            // No strategies-section exists (no summary was displayed), show strategies in main results div
             if (analyses.length === 0) {
-                resultsDiv.innerHTML = `
-                    <div class="loading">
-                        <p>No analysis results yet. Click "Run Analysis" to generate tax strategies.</p>
-                    </div>
-                `;
+                if (!summary) {
+                    resultsDiv.innerHTML = `
+                        <div class="loading">
+                            <p>No analysis results yet. Click "Run Analysis" to generate tax strategies.</p>
+                        </div>
+                    `;
+                }
             } else {
                 // Calculate total potential savings
                 const totalSavings = analyses.reduce((sum, a) => sum + (a.potential_savings || 0), 0);
                 
-                resultsDiv.innerHTML = `
-                    <div class="section">
-                        <h3>Total Potential Savings: $${totalSavings.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h3>
-                    </div>
-                    ${analyses.map(analysis => `
-                        <div class="strategy-card priority-${analysis.priority}">
-                            <div class="strategy-header">
-                                <div class="strategy-name">${analysis.strategy_name}</div>
-                                <div class="potential-savings">$${formatCurrency(analysis.potential_savings)}</div>
+                // Append or replace content in resultsDiv
+                if (summary) {
+                    // Summary was displayed, append strategies section
+                    const existingContent = resultsDiv.innerHTML;
+                    resultsDiv.innerHTML = existingContent + `
+                        <div id="strategies-section" style="margin-top: 2rem;">
+                            <div class="section">
+                                <h3>Tax Strategy Recommendations</h3>
+                                <p class="total-savings">Total Potential Savings: <strong>$${totalSavings.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</strong></p>
+                                <p style="font-size: 0.85rem; color: #6c757d; margin-top: 0.5rem;">📊 Enhanced Analysis v2.0 - Showing detailed strategy status, benefits, and forms analyzed</p>
                             </div>
-                            <div class="strategy-description">${analysis.strategy_description}</div>
-                            <div class="irs-reference">
-                                <strong>IRS Reference:</strong> 
-                                <a href="${analysis.irs_url || '#'}" target="_blank">${analysis.irs_section}</a>
-                                ${analysis.irs_code ? ` (${analysis.irs_code})` : ''}
-                            </div>
+                            ${analyses.map(analysis => renderStrategyCard(analysis)).join('')}
                         </div>
-                    `).join('')}
-                `;
+                    `;
+                } else {
+                    // No summary, replace entire content
+                    resultsDiv.innerHTML = `
+                        <div class="section">
+                            <h3>Total Potential Savings: $${totalSavings.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</h3>
+                            <p style="font-size: 0.85rem; color: #6c757d; margin-top: 0.5rem;">📊 Enhanced Analysis v2.0 - Showing detailed strategy status, benefits, and forms analyzed</p>
+                        </div>
+                        ${analyses.map(analysis => renderStrategyCard(analysis)).join('')}
+                    `;
+                }
             }
         }
     } catch (error) {
         console.error('Error loading analyses:', error);
         showError('Failed to load analysis results');
     }
+}
+
+function renderStrategyCard(analysis) {
+    const status = analysis.status || 'UNKNOWN';
+    const statusClass = getStatusClass(status);
+    const statusLabel = getStatusLabel(status);
+    
+    const flags = analysis.flags || [];
+    const recommendations = analysis.recommendations || [];
+    const formsAnalyzed = analysis.forms_analyzed || [];
+    
+    const currentBenefit = analysis.current_benefit || 0;
+    const potentialBenefit = analysis.potential_benefit || analysis.potential_savings || 0;
+    const unusedCapacity = analysis.unused_capacity || 0;
+    
+    let flagsHtml = '';
+    if (flags.length > 0) {
+        flagsHtml = `
+            <div class="strategy-flags">
+                <strong>Flags:</strong>
+                <ul>
+                    ${flags.map(flag => `<li class="flag-item">${flag}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+    
+    let recommendationsHtml = '';
+    if (recommendations.length > 0) {
+        recommendationsHtml = `
+            <div class="strategy-recommendations">
+                <strong>Recommendations:</strong>
+                <ul>
+                    ${recommendations.map(rec => `<li class="recommendation-item">${rec}</li>`).join('')}
+                </ul>
+            </div>
+        `;
+    }
+    
+    let formsHtml = '';
+    if (formsAnalyzed.length > 0) {
+        formsHtml = `
+            <div class="strategy-forms">
+                <strong>Forms Analyzed:</strong>
+                <span class="forms-list">${formsAnalyzed.join(', ')}</span>
+            </div>
+        `;
+    }
+    
+    let benefitsHtml = '';
+    if (currentBenefit > 0 || potentialBenefit > 0) {
+        benefitsHtml = `
+            <div class="strategy-benefits">
+                ${currentBenefit > 0 ? `<div class="benefit-item"><span class="benefit-label">Current Benefit:</span> <span class="benefit-value">$${formatCurrency(currentBenefit)}</span></div>` : ''}
+                ${potentialBenefit > currentBenefit ? `<div class="benefit-item"><span class="benefit-label">Potential Benefit:</span> <span class="benefit-value">$${formatCurrency(potentialBenefit)}</span></div>` : ''}
+                ${unusedCapacity > 0 ? `<div class="benefit-item"><span class="benefit-label">Unused Capacity:</span> <span class="benefit-value unused">$${formatCurrency(unusedCapacity)}</span></div>` : ''}
+            </div>
+        `;
+    }
+    
+    const html = `
+        <div class="strategy-card priority-${analysis.priority} status-${statusClass}">
+            <div class="strategy-header">
+                <div class="strategy-name">${analysis.strategy_name}</div>
+                <div class="strategy-status-badge ${statusClass}">${statusLabel}</div>
+            </div>
+            <div class="strategy-content">
+                ${benefitsHtml}
+                ${flagsHtml}
+                ${recommendationsHtml}
+                ${formsHtml}
+                <div class="irs-reference">
+                    <strong>IRS Reference:</strong> 
+                    <a href="${analysis.irs_url || '#'}" target="_blank">${analysis.irs_section}</a>
+                    ${analysis.irs_code ? ` (${analysis.irs_code})` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
+function getStatusClass(status) {
+    const statusMap = {
+        'FULLY_UTILIZED': 'success',
+        'PARTIALLY_UTILIZED': 'warning',
+        'NOT_UTILIZED': 'error',
+        'NOT_APPLICABLE': 'neutral',
+        'ERROR_DETECTED': 'error',
+        'POTENTIALLY_MISSED': 'warning',
+        'SUBOPTIMAL': 'warning',
+        'COMPLIANT_PRE_OBBBA': 'info'
+    };
+    return statusMap[status] || 'neutral';
+}
+
+function getStatusLabel(status) {
+    const labelMap = {
+        'FULLY_UTILIZED': '✓ Fully Utilized',
+        'PARTIALLY_UTILIZED': '⚠ Partially Utilized',
+        'NOT_UTILIZED': '✗ Not Utilized',
+        'NOT_APPLICABLE': '— Not Applicable',
+        'ERROR_DETECTED': '⚠ Error Detected',
+        'POTENTIALLY_MISSED': '⚠ Potentially Missed',
+        'SUBOPTIMAL': '⚠ Suboptimal',
+        'COMPLIANT_PRE_OBBBA': 'ℹ Compliant (Pre-OBBBA)'
+    };
+    return labelMap[status] || status;
 }
 
 function formatCurrency(amount) {

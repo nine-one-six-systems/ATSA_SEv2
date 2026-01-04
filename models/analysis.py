@@ -1,5 +1,6 @@
 from models import db
 from datetime import datetime
+import json
 
 class AnalysisResult(db.Model):
     __tablename__ = 'analysis_results'
@@ -15,8 +16,27 @@ class AnalysisResult(db.Model):
     priority = db.Column(db.Integer, default=3)  # 1-5, 1 being highest priority
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
+    def get_detailed_info(self):
+        """Parse detailed strategy information from strategy_description JSON"""
+        try:
+            return json.loads(self.strategy_description)
+        except (json.JSONDecodeError, TypeError):
+            # Fallback for old format or non-JSON descriptions
+            return {
+                'status': 'UNKNOWN',
+                'current_benefit': 0,
+                'potential_benefit': self.potential_savings or 0,
+                'unused_capacity': 0,
+                'flags': [],
+                'recommendations': [],
+                'forms_analyzed': []
+            }
+    
     def to_dict(self):
-        return {
+        """Convert to dictionary with detailed information"""
+        detailed_info = self.get_detailed_info()
+        
+        result = {
             'id': self.id,
             'client_id': self.client_id,
             'strategy_name': self.strategy_name,
@@ -26,6 +46,17 @@ class AnalysisResult(db.Model):
             'irs_code': self.irs_code,
             'irs_url': self.irs_url,
             'priority': self.priority,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            # Detailed information
+            'strategy_id': detailed_info.get('strategy_id', ''),
+            'status': detailed_info.get('status', 'UNKNOWN'),
+            'current_benefit': detailed_info.get('current_benefit', 0),
+            'potential_benefit': detailed_info.get('potential_benefit', self.potential_savings or 0),
+            'unused_capacity': detailed_info.get('unused_capacity', 0),
+            'flags': detailed_info.get('flags', []),
+            'recommendations': detailed_info.get('recommendations', []),
+            'forms_analyzed': detailed_info.get('forms_analyzed', [])
         }
+        
+        return result
 

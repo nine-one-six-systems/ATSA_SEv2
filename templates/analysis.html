@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Analysis - ATSA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">ATSA</h1>
+            <ul class="nav-menu">
+                <li><a href="/">Dashboard</a></li>
+                <li><a href="/clients.html">Clients</a></li>
+                <li><a href="/upload.html">Upload Documents</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="analysis-page">
+            <div class="page-header">
+                <h2>Tax Strategy Analysis</h2>
+                <button class="btn btn-primary" id="run-analysis-btn" onclick="runAnalysis()">Run Analysis</button>
+            </div>
+            
+            <div class="client-selector">
+                <label for="analysis-client-select">Select Client:</label>
+                <select id="analysis-client-select" onchange="loadAnalyses()">
+                    <option value="">Select a client...</option>
+                </select>
+            </div>
+            
+            <div id="analysis-results" class="analysis-results">
+                <!-- Analysis results will be displayed here -->
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/analysis.js') }}"></script>
+</body>
+</html>
+

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Documents - ATSA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">ATSA</h1>
+            <ul class="nav-menu">
+                <li><a href="/">Dashboard</a></li>
+                <li><a href="/clients.html">Clients</a></li>
+                <li><a href="/upload.html" class="active">Upload Documents</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="upload-page">
+            <h2>Upload Tax Documents</h2>
+            
+            <div class="upload-section">
+                <div class="form-group">
+                    <label for="client-select">Select Client *</label>
+                    <select id="client-select" required>
+                        <option value="">Select a client...</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tax-year">Tax Year</label>
+                    <input type="number" id="tax-year" min="2000" max="2030" value="2024">
+                </div>
+                
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-content">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p>Drag and drop files here or click to browse</p>
+                        <p class="upload-hint">Supported formats: PDF, JPG, PNG (Max 16MB)</p>
+                    </div>
+                    <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png" multiple style="display: none;">
+                </div>
+                
+                <div id="file-list" class="file-list"></div>
+                
+                <div class="upload-actions">
+                    <button class="btn btn-primary" id="upload-btn" onclick="uploadFiles()" disabled>Upload Files</button>
+                    <button class="btn btn-secondary" onclick="clearFiles()">Clear</button>
+                </div>
+            </div>
+            
+            <div class="documents-section">
+                <h3>Uploaded Documents</h3>
+                <div id="documents-list" class="documents-list">
+                    <!-- Documents will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+</body>
+</html>
+

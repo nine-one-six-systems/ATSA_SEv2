@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATSA - Advanced Tax Strategy Assessment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">ATSA</h1>
+            <ul class="nav-menu">
+                <li><a href="/" class="active">Dashboard</a></li>
+                <li><a href="/clients.html">Clients</a></li>
+                <li><a href="/upload.html">Upload Documents</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="dashboard">
+            <h2>Dashboard</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Total Clients</h3>
+                    <p class="stat-number" id="total-clients">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Documents Processed</h3>
+                    <p class="stat-number" id="total-documents">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Analyses Completed</h3>
+                    <p class="stat-number" id="total-analyses">0</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Recent Clients</h3>
+                <div id="recent-clients" class="client-list">
+                    <!-- Clients will be loaded here -->
+                </div>
+            </div>
+
+            <div class="section">
+                <h3>Quick Actions</h3>
+                <div class="action-buttons">
+                    <a href="/clients.html" class="btn btn-primary">Add New Client</a>
+                    <a href="/upload.html" class="btn btn-secondary">Upload Tax Document</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
+

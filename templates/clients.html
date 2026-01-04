@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clients - ATSA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">ATSA</h1>
+            <ul class="nav-menu">
+                <li><a href="/">Dashboard</a></li>
+                <li><a href="/clients.html" class="active">Clients</a></li>
+                <li><a href="/upload.html">Upload Documents</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="clients-page">
+            <div class="page-header">
+                <h2>Client Management</h2>
+                <button class="btn btn-primary" onclick="showClientModal()">Add New Client</button>
+            </div>
+
+            <div id="clients-list" class="clients-grid">
+                <!-- Clients will be loaded here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Client Modal -->
+    <div id="client-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeClientModal()">&times;</span>
+            <h2 id="modal-title">Add New Client</h2>
+            <form id="client-form" onsubmit="saveClient(event)">
+                <input type="hidden" id="client-id">
+                
+                <div class="form-group">
+                    <label for="first-name">First Name *</label>
+                    <input type="text" id="first-name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="last-name">Last Name *</label>
+                    <input type="text" id="last-name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="filing-status">Filing Status *</label>
+                    <select id="filing-status" required>
+                        <option value="">Select...</option>
+                        <option value="single">Single</option>
+                        <option value="married_joint">Married Filing Jointly</option>
+                        <option value="married_separate">Married Filing Separately</option>
+                        <option value="head_of_household">Head of Household</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="ssn">SSN</label>
+                    <input type="text" id="ssn" placeholder="XXX-XX-XXXX">
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone">Phone</label>
+                    <input type="tel" id="phone">
+                </div>
+                
+                <div class="form-group">
+                    <label for="address">Address</label>
+                    <textarea id="address" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="spouse-id">Link Spouse (Client ID)</label>
+                    <input type="number" id="spouse-id" placeholder="Optional">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeClientModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Client</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/clients.js') }}"></script>
+</body>
+</html>
+

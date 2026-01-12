@@ -1,20 +1,16 @@
 from flask import Blueprint, request, jsonify
-from models import db, AnalysisResult, Client, ExtractedData
+from models import db, AnalysisResult, AnalysisSummary, Client, ExtractedData
 from services.analysis_engine import AnalysisEngine
 
 analysis_bp = Blueprint('analysis', __name__)
 
 @analysis_bp.route('/analysis/analyze/<int:client_id>', methods=['POST'])
 def analyze_client(client_id):
-    """Run tax analysis for a client"""
+    """Run tax analysis for a client (force refresh)"""
     client = Client.query.get_or_404(client_id)
     
-    # Delete existing analyses for this client
-    AnalysisResult.query.filter_by(client_id=client_id).delete()
-    db.session.commit()
-    
-    # Run analysis
-    strategies, summary = AnalysisEngine.analyze_client(client_id)
+    # Run analysis with force_refresh=True to ensure fresh analysis
+    strategies, summary = AnalysisEngine.analyze_client(client_id, force_refresh=True)
     
     return jsonify({
         'message': 'Analysis completed',
@@ -32,29 +28,37 @@ def get_analysis(analysis_id):
 
 @analysis_bp.route('/analysis/client/<int:client_id>', methods=['GET'])
 def get_client_analyses(client_id):
-    """Get all analyses for a client"""
+    """Get all analyses for a client (returns stored results from database)"""
     analyses = AnalysisResult.query.filter_by(client_id=client_id).order_by(
         AnalysisResult.priority.asc(),
         AnalysisResult.potential_savings.desc()
     ).all()
     
-    # Also get summary if data exists
-    extracted_data = ExtractedData.query.filter_by(client_id=client_id).all()
+    # Get stored summary from database instead of recalculating
+    analysis_summary = AnalysisSummary.query.filter_by(client_id=client_id).first()
     summary = None
-    if extracted_data:
-        # Organize data by form type
-        data_by_form = {}
-        for data in extracted_data:
-            if data.form_type not in data_by_form:
-                data_by_form[data.form_type] = {}
-            data_by_form[data.form_type][data.field_name] = data.field_value
-        
-        client = Client.query.get(client_id)
-        if client:
-            summary = AnalysisEngine._calculate_summary(data_by_form, client)
+    if analysis_summary:
+        summary_dict = analysis_summary.to_dict()
+        # Remove internal fields from summary dict
+        summary_dict.pop('id', None)
+        summary_dict.pop('client_id', None)
+        summary_dict.pop('data_version_hash', None)
+        summary_dict.pop('last_analyzed_at', None)
+        summary_dict.pop('created_at', None)
+        summary_dict.pop('updated_at', None)
+        summary = summary_dict
+    
+    # Get analysis status info
+    analysis_status = None
+    if analysis_summary:
+        analysis_status = {
+            'last_analyzed_at': analysis_summary.last_analyzed_at.isoformat() if analysis_summary.last_analyzed_at else None,
+            'data_version_hash': analysis_summary.data_version_hash
+        }
     
     return jsonify({
         'analyses': [a.to_dict() for a in analyses],
-        'summary': summary
+        'summary': summary,
+        'analysis_status': analysis_status
     })
 

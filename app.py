@@ -37,6 +37,10 @@ def create_app():
     def analysis():
         return render_template('analysis.html')
     
+    @app.route('/calculator.html')
+    def calculator():
+        return render_template('calculator.html')
+    
     # Initialize database tables
     with app.app_context():
         init_database()

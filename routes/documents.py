@@ -3,6 +3,7 @@ from werkzeug.utils import secure_filename
 from models import db, Document
 from services.ocr_service import OCRService
 from services.tax_parser import TaxParser
+from services.analysis_engine import AnalysisEngine
 import os
 from datetime import datetime
 
@@ -85,12 +86,29 @@ def process_document(document_id):
         document.ocr_status = 'completed'
         db.session.commit()
         
-        return jsonify({
+        # Automatically trigger analysis after successful extraction
+        analysis_triggered = False
+        analysis_error = None
+        try:
+            strategies, summary = AnalysisEngine.analyze_client(document.client_id)
+            analysis_triggered = True
+        except Exception as analysis_ex:
+            # Log error but don't fail the document processing
+            analysis_error = str(analysis_ex)
+            current_app.logger.error(f'Analysis failed for client {document.client_id}: {analysis_error}')
+        
+        response_data = {
             'message': 'Document processed successfully',
             'document': document.to_dict(),
             'forms_detected': list(parsed_data.keys()),
-            'parsed_data': parsed_data
-        }), 200
+            'parsed_data': parsed_data,
+            'analysis_triggered': analysis_triggered
+        }
+        
+        if analysis_error:
+            response_data['analysis_error'] = analysis_error
+        
+        return jsonify(response_data), 200
     
     except Exception as e:
         document.ocr_status = 'failed'

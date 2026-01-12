@@ -14,6 +14,8 @@
                 <li><a href="/">Dashboard</a></li>
                 <li><a href="/clients.html" class="active">Clients</a></li>
                 <li><a href="/upload.html">Upload Documents</a></li>
+                <li><a href="/analysis.html">Analysis</a></li>
+                <li><a href="/calculator.html">Calculator</a></li>
             </ul>
         </div>
     </nav>
@@ -23,6 +25,17 @@
             <div class="page-header">
                 <h2>Client Management</h2>
                 <button class="btn btn-primary" onclick="showClientModal()">Add New Client</button>
+            </div>
+
+            <div class="client-selector" style="margin-bottom: 2rem;">
+                <label for="client-select">Select Client to View Analysis:</label>
+                <select id="client-select" style="min-width: 300px; padding: 0.5rem;">
+                    <option value="">Select a client...</option>
+                </select>
+            </div>
+
+            <div id="client-analysis-results" class="analysis-results" style="display: none;">
+                <!-- Analysis results will be displayed here -->
             </div>
 
             <div id="clients-list" class="clients-grid">

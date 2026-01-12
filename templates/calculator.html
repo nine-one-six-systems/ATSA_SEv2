@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Calculator - ATSA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">ATSA</h1>
+            <ul class="nav-menu">
+                <li><a href="/">Dashboard</a></li>
+                <li><a href="/clients.html">Clients</a></li>
+                <li><a href="/upload.html">Upload Documents</a></li>
+                <li><a href="/analysis.html">Analysis</a></li>
+                <li><a href="/calculator.html" class="active">Calculator</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="calculator-page">
+            <div class="page-header">
+                <h2>Tax Liability Calculator</h2>
+            </div>
+
+            <form id="calculator-form" class="calculator-form">
+                <!-- Income Field with Frequency Toggle -->
+                <div class="form-group">
+                    <label for="income-amount">Income *</label>
+                    <div class="income-input-group">
+                        <input type="number" id="income-amount" step="0.01" min="0" required placeholder="Enter income amount">
+                        <div class="frequency-toggle">
+                            <button type="button" class="toggle-btn active" data-frequency="annual">Annual</button>
+                            <button type="button" class="toggle-btn" data-frequency="monthly">Monthly</button>
+                            <button type="button" class="toggle-btn" data-frequency="bi_monthly">Bi-Monthly</button>
+                            <button type="button" class="toggle-btn" data-frequency="bi_weekly">Bi-Weekly</button>
+                            <button type="button" class="toggle-btn" data-frequency="weekly">Weekly</button>
+                        </div>
+                    </div>
+                    <input type="hidden" id="income-frequency" value="annual">
+                </div>
+
+                <!-- Income Source Dropdown -->
+                <div class="form-group">
+                    <label for="income-source">Income Source *</label>
+                    <select id="income-source" required>
+                        <option value="w2" selected>Employee (W2)</option>
+                        <option value="llc">LLC</option>
+                        <option value="llc_s_corp">LLC as an S-Corp</option>
+                        <option value="s_corp">S-Corp</option>
+                    </select>
+                </div>
+
+                <!-- Salary and Distributions Fields (conditional) -->
+                <div class="form-group" id="salary-distributions-group" style="display: none;">
+                    <label>Salary and Distributions *</label>
+                    <div class="salary-distributions-inputs">
+                        <div class="form-group-inline">
+                            <label for="salary-amount">Salary:</label>
+                            <input type="number" id="salary-amount" step="0.01" min="0" placeholder="Enter salary amount">
+                        </div>
+                        <div class="form-group-inline">
+                            <label for="distributions-amount">Distributions (Calculated):</label>
+                            <input type="number" id="distributions-amount" step="0.01" min="0" readonly placeholder="Calculated automatically">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filing Status Toggle -->
+                <div class="form-group">
+                    <label>Filing Status *</label>
+                    <div class="filing-status-toggle">
+                        <button type="button" class="toggle-btn active" data-status="single">Single</button>
+                        <button type="button" class="toggle-btn" data-status="married_joint">Married Filing Jointly</button>
+                        <button type="button" class="toggle-btn" data-status="married_separate">Married Filing Separately</button>
+                        <button type="button" class="toggle-btn" data-status="head_of_household">Head of Household</button>
+                        <button type="button" class="toggle-btn" data-status="qualifying_surviving_spouse">Qualifying Surviving Spouse</button>
+                    </div>
+                    <input type="hidden" id="filing-status" value="single">
+                </div>
+
+                <!-- Child Tax Credit Dropdown -->
+                <div class="form-group">
+                    <label for="dependents">Child Tax Credit (17 and under)</label>
+                    <select id="dependents">
+                        <option value="0" selected>0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                    </select>
+                </div>
+
+                <!-- State Selection -->
+                <div class="form-group">
+                    <label for="state-select">State</label>
+                    <select id="state-select">
+                        <option value="">Select a state...</option>
+                    </select>
+                </div>
+
+                <!-- Multiple States Checkbox -->
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="multiple-states">
+                        <span>Multiple States</span>
+                    </label>
+                </div>
+
+                <!-- Multiple States Selection (hidden by default) -->
+                <div class="form-group" id="multiple-states-group" style="display: none;">
+                    <label>Select States</label>
+                    <div id="selected-states-list" class="selected-states-list"></div>
+                    <select id="add-state-select">
+                        <option value="">Add a state...</option>
+                    </select>
+                    <button type="button" class="btn btn-secondary" id="add-state-btn">Add State</button>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Analyze</button>
+                </div>
+            </form>
+
+            <!-- Results Section -->
+            <div id="calculator-results" class="calculator-results" style="display: none;">
+                <!-- Results will be displayed here -->
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/calculator.js') }}"></script>
+</body>
+</html>

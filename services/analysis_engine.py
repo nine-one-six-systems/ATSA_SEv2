@@ -1,18 +1,47 @@
-from models import db, ExtractedData, AnalysisResult, Client
+from models import db, ExtractedData, AnalysisResult, AnalysisSummary, Client, Document
 from services.irs_reference import IRSReferenceService
 from services.tax_strategies import TaxStrategiesService
 from decimal import Decimal
+import hashlib
+import json
+from datetime import datetime
+from collections import Counter
 
 class AnalysisEngine:
     """Service for analyzing tax data and generating strategy recommendations"""
     
     @staticmethod
-    def analyze_client(client_id):
+    def _calculate_data_version_hash(client_id):
+        """
+        Calculate a hash of all ExtractedData timestamps for a client to detect data changes
+        
+        Args:
+            client_id: ID of the client
+        
+        Returns:
+            str: SHA-256 hash of sorted timestamps
+        """
+        extracted_data = ExtractedData.query.filter_by(client_id=client_id).all()
+        
+        if not extracted_data:
+            return hashlib.sha256(b'').hexdigest()
+        
+        # Sort timestamps and concatenate
+        timestamps = sorted([str(data.extracted_at.isoformat()) if data.extracted_at else '' 
+                            for data in extracted_data])
+        timestamp_string = '|'.join(timestamps)
+        
+        # Generate hash
+        return hashlib.sha256(timestamp_string.encode('utf-8')).hexdigest()
+    
+    @staticmethod
+    def analyze_client(client_id, force_refresh=False):
         """
         Analyze a client's tax situation and generate recommendations
         
         Args:
             client_id: ID of the client to analyze
+            force_refresh: If True, force reanalysis even if data hasn't changed
         
         Returns:
             tuple: (list of AnalysisResult objects, summary dict)
@@ -22,6 +51,25 @@ class AnalysisEngine:
         
         if not extracted_data:
             return [], AnalysisEngine._generate_empty_summary()
+        
+        # Calculate current data version hash
+        current_hash = AnalysisEngine._calculate_data_version_hash(client_id)
+        
+        # Check for existing analysis summary
+        existing_summary = AnalysisSummary.query.filter_by(client_id=client_id).first()
+        
+        # If analysis exists and data hasn't changed, return cached results
+        if existing_summary and existing_summary.data_version_hash == current_hash and not force_refresh:
+            strategies = AnalysisResult.query.filter_by(client_id=client_id).all()
+            summary_dict = existing_summary.to_dict()
+            # Remove internal fields from summary dict
+            summary_dict.pop('id', None)
+            summary_dict.pop('client_id', None)
+            summary_dict.pop('data_version_hash', None)
+            summary_dict.pop('last_analyzed_at', None)
+            summary_dict.pop('created_at', None)
+            summary_dict.pop('updated_at', None)
+            return strategies, summary_dict
         
         # Organize data by form type
         data_by_form = {}
@@ -33,15 +81,59 @@ class AnalysisEngine:
         # Get client info
         client = Client.query.get(client_id)
         
+        # Get tax_year from documents (most common year)
+        tax_year = AnalysisEngine._get_client_tax_year(client_id)
+        
         # Generate summary
         summary = AnalysisEngine._calculate_summary(data_by_form, client)
+        summary['tax_year'] = tax_year
         
         # Generate strategies using comprehensive tax strategies service
         strategies = TaxStrategiesService.analyze_all_strategies(data_by_form, client)
         
-        # Store strategies in database
+        # Delete existing analysis results for this client
+        AnalysisResult.query.filter_by(client_id=client_id).delete()
+        
+        # Store new strategies in database
         for strategy in strategies:
             db.session.add(strategy)
+        
+        # Create or update analysis summary
+        if existing_summary:
+            # Update existing summary
+            existing_summary.tax_year = summary.get('tax_year')
+            existing_summary.total_income = summary.get('total_income', 0)
+            existing_summary.adjusted_gross_income = summary.get('adjusted_gross_income', 0)
+            existing_summary.taxable_income = summary.get('taxable_income', 0)
+            existing_summary.total_tax = summary.get('total_tax', 0)
+            existing_summary.tax_withheld = summary.get('tax_withheld', 0)
+            existing_summary.tax_owed = summary.get('tax_owed', 0)
+            existing_summary.tax_refund = summary.get('tax_refund', 0)
+            existing_summary.effective_tax_rate = summary.get('effective_tax_rate', 0)
+            existing_summary.marginal_tax_rate = summary.get('marginal_tax_rate', 0)
+            existing_summary.income_sources = json.dumps(summary.get('income_sources', []))
+            existing_summary.data_version_hash = current_hash
+            existing_summary.last_analyzed_at = datetime.utcnow()
+            existing_summary.updated_at = datetime.utcnow()
+        else:
+            # Create new summary
+            analysis_summary = AnalysisSummary(
+                client_id=client_id,
+                tax_year=summary.get('tax_year'),
+                total_income=summary.get('total_income', 0),
+                adjusted_gross_income=summary.get('adjusted_gross_income', 0),
+                taxable_income=summary.get('taxable_income', 0),
+                total_tax=summary.get('total_tax', 0),
+                tax_withheld=summary.get('tax_withheld', 0),
+                tax_owed=summary.get('tax_owed', 0),
+                tax_refund=summary.get('tax_refund', 0),
+                effective_tax_rate=summary.get('effective_tax_rate', 0),
+                marginal_tax_rate=summary.get('marginal_tax_rate', 0),
+                income_sources=json.dumps(summary.get('income_sources', [])),
+                data_version_hash=current_hash,
+                last_analyzed_at=datetime.utcnow()
+            )
+            db.session.add(analysis_summary)
         
         db.session.commit()
         
@@ -159,6 +251,23 @@ class AnalysisEngine:
             return 35
         else:  # 37% bracket
             return 37
+    
+    @staticmethod
+    def _get_client_tax_year(client_id):
+        """Get the most common tax_year from client's documents"""
+        documents = Document.query.filter_by(client_id=client_id).filter(
+            Document.tax_year.isnot(None)
+        ).all()
+        
+        if not documents:
+            return None
+        
+        # Get most common tax_year
+        tax_years = [doc.tax_year for doc in documents if doc.tax_year]
+        if tax_years:
+            return Counter(tax_years).most_common(1)[0][0]
+        
+        return None
     
     @staticmethod
     def _get_numeric_value(data_dict, form_type, field_name, default=0):

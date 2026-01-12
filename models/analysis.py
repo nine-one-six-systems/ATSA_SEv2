@@ -1,6 +1,57 @@
 from models import db
 from datetime import datetime
 import json
+import hashlib
+
+class AnalysisSummary(db.Model):
+    __tablename__ = 'analysis_summaries'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False, unique=True)
+    tax_year = db.Column(db.Integer, nullable=True)
+    total_income = db.Column(db.Float, default=0)
+    adjusted_gross_income = db.Column(db.Float, default=0)
+    taxable_income = db.Column(db.Float, default=0)
+    total_tax = db.Column(db.Float, default=0)
+    tax_withheld = db.Column(db.Float, default=0)
+    tax_owed = db.Column(db.Float, default=0)
+    tax_refund = db.Column(db.Float, default=0)
+    effective_tax_rate = db.Column(db.Float, default=0)
+    marginal_tax_rate = db.Column(db.Integer, default=0)
+    income_sources = db.Column(db.Text)  # JSON array
+    data_version_hash = db.Column(db.String(64))  # SHA-256 hash
+    last_analyzed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def to_dict(self):
+        """Convert to dictionary"""
+        income_sources_list = []
+        if self.income_sources:
+            try:
+                income_sources_list = json.loads(self.income_sources)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        
+        return {
+            'id': self.id,
+            'client_id': self.client_id,
+            'tax_year': self.tax_year,
+            'total_income': self.total_income,
+            'adjusted_gross_income': self.adjusted_gross_income,
+            'taxable_income': self.taxable_income,
+            'total_tax': self.total_tax,
+            'tax_withheld': self.tax_withheld,
+            'tax_owed': self.tax_owed,
+            'tax_refund': self.tax_refund,
+            'effective_tax_rate': self.effective_tax_rate,
+            'marginal_tax_rate': self.marginal_tax_rate,
+            'income_sources': income_sources_list,
+            'data_version_hash': self.data_version_hash,
+            'last_analyzed_at': self.last_analyzed_at.isoformat() if self.last_analyzed_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
 
 class AnalysisResult(db.Model):
     __tablename__ = 'analysis_results'

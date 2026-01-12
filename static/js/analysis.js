@@ -2,15 +2,24 @@
 const API_BASE = '/api';
 
 // Load clients on page load
-document.addEventListener('DOMContentLoaded', () => {
-    loadClients();
-    
-    // Check for client_id in URL
+document.addEventListener('DOMContentLoaded', async () => {
+    // Check for client_id in URL before loading
     const urlParams = new URLSearchParams(window.location.search);
     const clientId = urlParams.get('client_id');
+    
+    // Load clients first (await to ensure dropdown is populated)
+    await loadClients();
+    
+    // After dropdown is populated, set value and load analysis if client_id in URL
     if (clientId) {
-        document.getElementById('analysis-client-select').value = clientId;
-        loadAnalyses();
+        const select = document.getElementById('analysis-client-select');
+        if (select) {
+            select.value = clientId;
+            // Small delay to ensure value is set
+            setTimeout(() => {
+                loadAnalyses();
+            }, 100);
+        }
     }
 });
 
@@ -29,12 +38,7 @@ async function loadClients() {
             select.appendChild(option);
         });
         
-        // Set selected value if from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const clientId = urlParams.get('client_id');
-        if (clientId) {
-            select.value = clientId;
-        }
+        // Note: Value setting and analysis loading is handled in DOMContentLoaded after this function completes
     } catch (error) {
         console.error('Error loading clients:', error);
     }
@@ -49,6 +53,7 @@ async function runAnalysis() {
     }
     
     const btn = document.getElementById('run-analysis-btn');
+    const originalText = btn.textContent;
     btn.disabled = true;
     btn.textContent = 'Analyzing...';
     
@@ -60,8 +65,8 @@ async function runAnalysis() {
         if (response.ok) {
             const result = await response.json();
             showSuccess(`Analysis completed. Found ${result.strategies_count} strategies.`);
-            displaySummary(result.summary);
-            loadAnalyses();
+            // Reload analyses to get updated status
+            await loadAnalyses();
         } else {
             const error = await response.json();
             showError(error.error || 'Analysis failed');
@@ -71,11 +76,29 @@ async function runAnalysis() {
         showError('Failed to run analysis');
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Run Analysis';
+        btn.textContent = originalText;
     }
 }
 
-function displaySummary(summary) {
+function updateAnalysisButton(analysisStatus) {
+    const btn = document.getElementById('run-analysis-btn');
+    if (!btn) return;
+    
+    if (!analysisStatus || !analysisStatus.last_analyzed_at) {
+        // No analysis exists - show "Run Analysis"
+        btn.textContent = 'Run Analysis';
+        btn.style.display = 'inline-block';
+        btn.title = 'Run analysis for this client';
+    } else {
+        // Analysis exists - show "Refresh Analysis"
+        btn.textContent = 'Refresh Analysis';
+        btn.style.display = 'inline-block';
+        const lastAnalyzed = new Date(analysisStatus.last_analyzed_at);
+        btn.title = `Last analyzed: ${lastAnalyzed.toLocaleString()}. Click to refresh.`;
+    }
+}
+
+function displaySummary(summary, analysisStatus) {
     const resultsDiv = document.getElementById('analysis-results');
     
     if (!summary || summary.total_income === 0) {
@@ -93,6 +116,18 @@ function displaySummary(summary) {
     const taxStatus = summary.tax_owed > 0 ? 'owed' : 'refund';
     const taxAmount = summary.tax_owed > 0 ? summary.tax_owed : summary.tax_refund;
     
+    // Build analysis status info
+    let analysisStatusHtml = '';
+    if (analysisStatus && analysisStatus.last_analyzed_at) {
+        const lastAnalyzed = new Date(analysisStatus.last_analyzed_at);
+        analysisStatusHtml = `
+            <div style="font-size: 0.85rem; color: #6c757d; margin-bottom: 1rem; padding: 0.5rem; background: #f8f9fa; border-radius: 4px;">
+                <strong>Analysis Status:</strong> Last analyzed on ${lastAnalyzed.toLocaleString()}
+                ${analysisStatus.data_version_hash ? ' • Analysis is up to date' : ''}
+            </div>
+        `;
+    }
+    
     // Build income sources breakdown HTML
     const incomeSourcesHtml = summary.income_sources && summary.income_sources.length > 0
         ? summary.income_sources.map(source => `
@@ -105,6 +140,7 @@ function displaySummary(summary) {
     
     resultsDiv.innerHTML = `
         <div class="summary-section">
+            ${analysisStatusHtml}
             <h3>Tax Summary Overview</h3>
             <div class="summary-grid">
                 <div class="summary-card income-card" id="total-income-card">
@@ -221,6 +257,7 @@ async function loadAnalyses() {
         if (resultsDiv) {
             resultsDiv.innerHTML = '<p class="loading">Select a client to view analysis results</p>';
         }
+        updateAnalysisButton(null);
         return;
     }
     
@@ -229,12 +266,16 @@ async function loadAnalyses() {
         const result = await response.json();
         const analyses = result.analyses || [];
         const summary = result.summary;
+        const analysisStatus = result.analysis_status || null;
+        
+        // Update button visibility and text based on analysis status
+        updateAnalysisButton(analysisStatus);
         
         const resultsDiv = document.getElementById('analysis-results');
         
         // Display summary if available (this creates the strategies-section div)
         if (summary) {
-            displaySummary(summary);
+            displaySummary(summary, analysisStatus);
         } else if (resultsDiv) {
             // No summary available, show message
             resultsDiv.innerHTML = `
@@ -242,6 +283,7 @@ async function loadAnalyses() {
                     <div class="summary-card warning">
                         <h3>⚠️ No Tax Data Available</h3>
                         <p>Please upload and process tax documents for this client to see a summary.</p>
+                        ${analysisStatus ? `<p style="font-size: 0.85rem; margin-top: 0.5rem; color: #6c757d;">Analysis will run automatically after processing documents.</p>` : ''}
                     </div>
                 </div>
             `;

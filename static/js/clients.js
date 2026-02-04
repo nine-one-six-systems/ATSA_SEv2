@@ -255,9 +255,74 @@ function showSuccess(message) {
 
 // Close modal when clicking outside
 window.onclick = function(event) {
-    const modal = document.getElementById('client-modal');
-    if (event.target == modal) {
+    const clientModal = document.getElementById('client-modal');
+    const coupleModal = document.getElementById('couple-modal');
+    if (event.target === clientModal) {
         closeClientModal();
+    }
+    if (event.target === coupleModal) {
+        closeCoupleModal();
+    }
+}
+
+// ============================================================================
+// Couple Creation Functions
+// ============================================================================
+
+function showCoupleModal() {
+    document.getElementById('couple-modal').style.display = 'block';
+    // Reset form
+    document.getElementById('couple-form').reset();
+}
+
+function closeCoupleModal() {
+    document.getElementById('couple-modal').style.display = 'none';
+}
+
+async function createCouple(event) {
+    event.preventDefault();
+
+    const filingStatus = document.getElementById('couple-filing-status').value;
+
+    const coupleData = {
+        spouse1: {
+            first_name: document.getElementById('spouse1-first-name').value,
+            last_name: document.getElementById('spouse1-last-name').value,
+            email: document.getElementById('spouse1-email').value || null,
+            phone: document.getElementById('spouse1-phone').value || null,
+            filing_status: filingStatus
+        },
+        spouse2: {
+            first_name: document.getElementById('spouse2-first-name').value,
+            last_name: document.getElementById('spouse2-last-name').value,
+            email: document.getElementById('spouse2-email').value || null,
+            phone: document.getElementById('spouse2-phone').value || null,
+            filing_status: filingStatus
+        }
+    };
+
+    try {
+        const response = await fetch('/api/clients/create-couple', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(coupleData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to create couple');
+        }
+
+        const result = await response.json();
+
+        // Redirect to joint analysis page
+        window.location.href = result.joint_analysis_url;
+
+    } catch (error) {
+        console.error('Error creating couple:', error);
+        alert('Error creating couple: ' + error.message);
     }
 }
 

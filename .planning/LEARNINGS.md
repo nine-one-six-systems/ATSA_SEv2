@@ -627,5 +627,54 @@ Document discoveries, patterns, and anti-patterns encountered during development
 
 ---
 
+## Iteration Log Entry
+
+**Iteration:** 14
+**Phase:** 4 Plan: 02
+**Action:** EXECUTE
+**Outcome:** Success
+**Duration:** 12 minutes
+
+### Learnings from This Execution
+
+**What Worked:**
+- Caching spouse_id as data attribute on select options - instant visibility toggle for attribution selector without API call
+- Tab-based UI for alternative data entry methods - clear separation without hiding either option
+- SQLite table recreation pattern for schema changes - ALTER COLUMN doesn't work in SQLite, need CREATE/INSERT/DROP/RENAME
+
+**What Didn't Work:**
+- SQLAlchemy nullable=True in model doesn't automatically update existing database tables - had to manually recreate table with new schema
+
+**Codebase Discovery:**
+- ExtractedData model originally had NOT NULL constraint on document_id - manual entries require nullable document_id
+- Database is at /Users/samueledwards/ATSA_SEv2/database.db (not instance/atsa.db)
+- Flask test_client() is the fastest way to test routes without starting actual server
+
+**Prompt Tuning:**
+- When adding new nullable columns to SQLite, always check if table recreation is needed (ALTER COLUMN not supported)
+
+---
+
+### Phase 4 Plan 02 Summary
+
+**Plan:** Document Attribution and Manual Entry
+**Requirements Implemented:** REQ-25, REQ-26
+
+**Key Implementation Details:**
+- Document.attribution column (taxpayer/spouse/joint) with default 'taxpayer'
+- ExtractedData.document_id made nullable for manual entries
+- POST /api/documents/manual-entry creates records without document upload
+- Attribution selector only appears when selected client has spouse_id
+- Tab interface: "Document Upload" | "Manual Entry" with shared attribution selector
+
+**Files Modified:**
+- models/document.py (+3 lines)
+- models/extracted_data.py (+2 lines)
+- routes/documents.py (+100 lines)
+- templates/upload.html (+130 lines)
+- static/js/upload.js (+130 lines)
+
+---
+
 *Last updated: 2026-02-04*
-*Next update: After Phase 4 Plan 02*
+*Next update: After Phase 4 Plan 03*

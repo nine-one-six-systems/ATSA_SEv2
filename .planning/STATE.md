@@ -10,24 +10,24 @@
 
 **Core Value:** A tax professional can see both spouses' individual tax pictures side-by-side and instantly understand their combined joint liability -- one screen, complete picture.
 
-**Current Focus:** Phase 4 executing (1/4 plans complete).
+**Current Focus:** Phase 4 executing (2/4 plans complete).
 
 ---
 
 ## Current Position
 
 **Phase:** 4 of 4 -- Dual-Filer Strategies and Workflow
-**Plan:** 1 of 4 (04-01 complete)
+**Plan:** 2 of 4 (04-02 complete)
 **Status:** In progress
 
 ```
 Phase 1 [############] 100%  Core Calculation Engine (DONE)
 Phase 2 [############] 100%  MFS Compliance Logic (DONE)
 Phase 3 [############] 100%  Split-Screen UI (VERIFIED)
-Phase 4 [###.........] 25%   Strategies and Workflow (in progress)
+Phase 4 [######......] 50%   Strategies and Workflow (in progress)
 ```
 
-**Overall:** 21/26 requirements implemented (81%)
+**Overall:** 23/26 requirements implemented (88%)
 
 ---
 
@@ -35,9 +35,9 @@ Phase 4 [###.........] 25%   Strategies and Workflow (in progress)
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 11 |
+| Plans completed | 12 |
 | Plans with issues | 1 (std deduction data - fixed) |
-| Requirements done | 21/26 |
+| Requirements done | 23/26 |
 | Phases done | 3/4 |
 
 ---
@@ -56,6 +56,8 @@ Phase 4 [###.........] 25%   Strategies and Workflow (in progress)
 | localStorage for Split.js persistence | User panel size preferences preserved across page reloads |
 | Filter dropdowns to linked spouses only | Only clients with spouse_id can perform joint analysis |
 | Shared filing status in couple creation | Simpler UX - both spouses get same status initially |
+| ExtractedData.document_id nullable | Required for manual entries without uploaded documents |
+| Attribution stored on Document | Document carries tag; extracted data routes to target client at processing time |
 
 ### Architecture Notes
 
@@ -65,6 +67,7 @@ Phase 4 [###.........] 25%   Strategies and Workflow (in progress)
 - Split.js (2kb CDN) for resizable panes -- no npm build required
 - All tax calculation server-side in Python -- frontend only displays results
 - JavaScript uses async/await for all API calls
+- Attribution pattern: Document.attribution determines which client gets extracted data
 
 ### Todos
 
@@ -80,7 +83,8 @@ Phase 4 [###.........] 25%   Strategies and Workflow (in progress)
 - [x] Verify Phase 3 (5/5 pass, no gaps)
 - [x] Plan Phase 4 (4 plans, 3 waves)
 - [x] Execute Phase 4 Plan 01 (spouse linking workflow)
-- [ ] Execute Phase 4 Plans 02-04
+- [x] Execute Phase 4 Plan 02 (document attribution & manual entry)
+- [ ] Execute Phase 4 Plans 03-04
 
 ### Blockers
 
@@ -90,24 +94,25 @@ None.
 
 ## Session Continuity
 
-**Last Action:** Completed 04-01-PLAN.md (spouse linking workflow).
+**Last Action:** Completed 04-02-PLAN.md (document attribution & manual entry).
 
-**Next Action:** Execute Phase 4 Wave 2 (04-02: strategy comparison cards).
+**Next Action:** Execute Phase 4 Wave 2 (04-03: strategy comparison cards).
 
-**Context for Next Session:** Phase 4 Plan 01 complete. Spouse linking workflow functional:
-- "Create Married Couple" button on clients page
-- Two-column modal form for both spouse details
-- POST /api/clients/create-couple creates bidirectionally linked spouses
-- Automatic redirect to joint-analysis.html with spouses pre-selected
+**Context for Next Session:** Phase 4 Plan 02 complete. Document attribution and manual entry functional:
+- Document model has attribution column (taxpayer/spouse/joint)
+- Upload endpoint validates and stores attribution
+- Manual entry endpoint creates ExtractedData records without documents
+- Attribution selector appears when client has linked spouse
+- Tab-based UI for Document Upload vs Manual Entry
 
 ---
 
 ## Autopilot Status
 
 Mode: Active
-Iteration: 13 of 50
+Iteration: 14 of 50
 Started: 2026-02-04
-Last position: Phase: 4 of 4 | Plan: 1 of 4
+Last position: Phase: 4 of 4 | Plan: 2 of 4
 Stuck count: 0
 Current action: EXECUTE
 Unattended: false

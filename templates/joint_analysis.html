@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Joint Analysis - ATSA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://unpkg.com/split.js@1.6.5/dist/split.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">ATSA</h1>
+            <ul class="nav-menu">
+                <li><a href="/">Dashboard</a></li>
+                <li><a href="/clients.html">Clients</a></li>
+                <li><a href="/upload.html">Upload Documents</a></li>
+                <li><a href="/analysis.html">Analysis</a></li>
+                <li><a href="/joint-analysis.html" class="active">Joint Analysis</a></li>
+                <li><a href="/calculator.html">Calculator</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="joint-analysis-page">
+            <div class="page-header">
+                <h2>Joint Tax Analysis</h2>
+                <div class="spouse-selector">
+                    <select id="spouse1-select"><option value="">Select Spouse 1...</option></select>
+                    <select id="spouse2-select"><option value="">Select Spouse 2...</option></select>
+                    <button class="btn btn-primary" id="load-analysis-btn">Load Analysis</button>
+                </div>
+            </div>
+
+            <!-- Split-screen container for spouse panels -->
+            <div class="split-screen-container" id="split-container">
+                <div id="spouse1-panel" class="spouse-panel">
+                    <h3 id="spouse1-name">Spouse 1</h3>
+                    <div id="spouse1-content" class="panel-content">
+                        <p class="loading">Select clients to view joint analysis</p>
+                    </div>
+                </div>
+
+                <div id="spouse2-panel" class="spouse-panel">
+                    <h3 id="spouse2-name">Spouse 2</h3>
+                    <div id="spouse2-content" class="panel-content">
+                        <p class="loading">Select clients to view joint analysis</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison section below split panes -->
+            <div class="comparison-section" id="comparison-section">
+                <h3>MFJ vs MFS Comparison</h3>
+                <div id="comparison-content">
+                    <p class="loading">Analysis comparison will appear here</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="{{ url_for('static', filename='js/joint_analysis.js') }}"></script>
+</body>
+</html>

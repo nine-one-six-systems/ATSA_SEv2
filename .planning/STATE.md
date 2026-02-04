@@ -10,24 +10,24 @@
 
 **Core Value:** A tax professional can see both spouses' individual tax pictures side-by-side and instantly understand their combined joint liability -- one screen, complete picture.
 
-**Current Focus:** Phase 3 in progress. Plan 03-01 complete (template, CSS, route). Plan 03-02 next (JavaScript).
+**Current Focus:** Phase 3 complete. Split-screen UI fully functional with JavaScript interactivity. Ready for Phase 4.
 
 ---
 
 ## Current Position
 
 **Phase:** 3 of 4 -- Split-Screen UI and Comparison View
-**Plan:** 1 of 2 complete
-**Status:** In progress
+**Plan:** 2 of 2 complete
+**Status:** Phase complete
 
 ```
 Phase 1 [############] 100%  Core Calculation Engine (DONE)
 Phase 2 [############] 100%  MFS Compliance Logic (DONE)
-Phase 3 [######......] 50%   Split-Screen UI (in progress)
+Phase 3 [############] 100%  Split-Screen UI (DONE)
 Phase 4 [............] 0%    Strategies and Workflow
 ```
 
-**Overall:** 15/26 requirements implemented (58%)
+**Overall:** 18/26 requirements implemented (69%)
 
 ---
 
@@ -35,10 +35,10 @@ Phase 4 [............] 0%    Strategies and Workflow
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 8 |
+| Plans completed | 10 |
 | Plans with issues | 1 (std deduction data - fixed) |
-| Requirements done | 15/26 |
-| Phases done | 2/4 |
+| Requirements done | 18/26 |
+| Phases done | 3/4 |
 
 ---
 
@@ -53,6 +53,8 @@ Phase 4 [............] 0%    Strategies and Workflow
 | MFS compliance is separate phase | Compliance rules (deduction coordination, SALT halving, expense allocation) layer on top of working calculation, can be tested independently |
 | Strategies bundled with workflow in Phase 4 | Both are enhancements that require Phase 1 calc + Phase 3 UI to be meaningful |
 | Split.js CDN instead of npm | No build step required, 2kb library, matches existing vanilla JS architecture |
+| localStorage for Split.js persistence | User panel size preferences preserved across page reloads |
+| Filter dropdowns to linked spouses only | Only clients with spouse_id can perform joint analysis |
 
 ### Architecture Notes
 
@@ -61,6 +63,7 @@ Phase 4 [............] 0%    Strategies and Workflow
 - SQLite WAL mode + 30s busy timeout prevents concurrency issues
 - Split.js (2kb CDN) for resizable panes -- no npm build required
 - All tax calculation server-side in Python -- frontend only displays results
+- JavaScript uses async/await for all API calls
 
 ### Todos
 
@@ -72,7 +75,8 @@ Phase 4 [............] 0%    Strategies and Workflow
 - [x] Verify Phase 2 (17/17 pass, no gaps)
 - [x] Plan Phase 3 (2 plans, 2 waves)
 - [x] Execute Phase 3 Plan 01 (template, CSS, route)
-- [ ] Execute Phase 3 Plan 02 (JavaScript)
+- [x] Execute Phase 3 Plan 02 (JavaScript)
+- [ ] Plan Phase 4
 
 ### Blockers
 
@@ -82,20 +86,26 @@ None.
 
 ## Session Continuity
 
-**Last Action:** Completed Plan 03-01 (split-screen page foundation).
+**Last Action:** Completed Plan 03-02 (JavaScript implementation for joint analysis).
 
-**Next Action:** Execute Plan 03-02 (JavaScript: populate dropdowns, fetch API, render data).
+**Next Action:** Plan Phase 4 (Strategies and Workflow).
 
-**Context for Next Session:** Plan 03-01 complete. Template has all DOM IDs ready for JS binding. CSS includes responsive styles. Route serves page. Next: JavaScript to populate spouse dropdowns, call /api/joint-analysis/{id1}/{id2}, render income breakdowns and MFJ vs MFS comparison.
+**Context for Next Session:** Phase 3 complete. Split-screen UI fully functional:
+- Dropdowns populated with linked spouses
+- API integration with /api/joint-analysis
+- Income breakdown rendering per spouse (REQ-19)
+- MFJ vs MFS comparison cards with recommendation (REQ-18)
+- Line-by-line comparison table (REQ-20)
+- Responsive layout: Split.js on desktop, stacked on mobile
 
 ---
 
 ## Autopilot Status
 
 Mode: Active
-Iteration: 9 of 50
+Iteration: 10 of 50
 Started: 2026-02-04
-Last position: Phase: 3 of 4 | Plan: 1 of 2
+Last position: Phase: 3 of 4 | Plan: 2 of 2
 Stuck count: 0
 Current action: EXECUTE
 Unattended: false

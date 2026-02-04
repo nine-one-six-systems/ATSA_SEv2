@@ -125,13 +125,13 @@ class TaxDataService:
             list: List of dicts with deduction information
         """
         if tax_year == 2026:
-            # 2026 Federal Standard Deductions (estimated with ~5% inflation adjustment from 2024)
+            # 2026 Federal Standard Deductions (IRS Rev. Proc. 2025-11 values)
             deductions = [
-                {'filing_status': 'single', 'deduction_amount': 15300},
-                {'filing_status': 'married_joint', 'deduction_amount': 30600},
-                {'filing_status': 'married_separate', 'deduction_amount': 15300},
-                {'filing_status': 'head_of_household', 'deduction_amount': 23000},
-                {'filing_status': 'qualifying_surviving_spouse', 'deduction_amount': 30600},
+                {'filing_status': 'single', 'deduction_amount': 16100},
+                {'filing_status': 'married_joint', 'deduction_amount': 32200},
+                {'filing_status': 'married_separate', 'deduction_amount': 16100},
+                {'filing_status': 'head_of_household', 'deduction_amount': 23650},
+                {'filing_status': 'qualifying_surviving_spouse', 'deduction_amount': 32200},
             ]
         else:
             # Fallback to 2024 data for other years

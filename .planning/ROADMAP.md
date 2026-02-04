@@ -118,8 +118,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Template, Route, and Base CSS (split-screen HTML structure, Flask route, responsive styles)
-- [ ] 03-02-PLAN.md — JavaScript Implementation (Split.js, API integration, spouse panels, comparison display)
+- [x] 03-01-PLAN.md — Template, Route, and Base CSS (split-screen HTML structure, Flask route, responsive styles)
+- [x] 03-02-PLAN.md — JavaScript Implementation (Split.js, API integration, spouse panels, comparison display)
 
 **Requirements:**
 | ID | Requirement |
@@ -156,10 +156,13 @@ Plans:
 
 **Dependencies:** Phase 1 (calculation engine for strategy inputs), Phase 3 (UI must exist to display strategies and workflow improvements)
 
-**Plans:** 0 plans
+**Plans:** 4 plans
 
 Plans:
-- [ ] TBD (awaiting /gsd:plan-phase)
+- [ ] 04-01-PLAN.md — Spouse Linking Workflow (create-couple endpoint, two-column modal, redirect to joint analysis)
+- [ ] 04-02-PLAN.md — Document Attribution & Manual Entry (Document.attribution column, upload UI, manual income form)
+- [ ] 04-03-PLAN.md — Per-Spouse Strategy Enhancement (income type detection, strategy relevance filtering, UI display)
+- [ ] 04-04-PLAN.md — Joint Strategies & Feasibility (JointStrategyService, MFJ-only strategies, feasibility warnings)
 
 **Requirements:**
 | ID | Requirement |
@@ -180,12 +183,14 @@ Plans:
 
 **Key Files to Create/Modify:**
 - `services/tax_strategies.py` (MODIFY) -- add per-spouse strategy generation, joint optimization strategies, feasibility flags
+- `services/joint_strategy_service.py` (NEW) -- JointStrategyService for MFJ-only strategies
 - `services/joint_analysis_service.py` (MODIFY) -- integrate strategy generation into joint analysis flow
 - `templates/clients.html` (MODIFY) -- spouse linking workflow improvements
 - `templates/upload.html` (MODIFY) -- document attribution (taxpayer vs spouse) during upload
 - `routes/clients.py` (MODIFY) -- improved spouse linking endpoints
 - `routes/documents.py` (MODIFY) -- document attribution during upload
 - `static/js/joint_analysis.js` (MODIFY) -- render per-spouse and joint strategy sections
+- `models/document.py` (MODIFY) -- add attribution column
 
 ---
 
@@ -242,10 +247,10 @@ Orphaned: 0
 |-------|------|:------------:|--------|
 | 1 | Core Dual-Filer Calculation Engine | 12 | Complete |
 | 2 | MFS-Specific Compliance Logic | 3 | Complete |
-| 3 | Split-Screen UI and Comparison View | 5 | Planned |
-| 4 | Dual-Filer Strategies and Workflow | 6 | Not Started |
+| 3 | Split-Screen UI and Comparison View | 5 | Complete |
+| 4 | Dual-Filer Strategies and Workflow | 6 | Planned |
 
 ---
 
 *Roadmap created: 2026-02-04*
-*Next: Execute Phase 3*
+*Next: Execute Phase 4*

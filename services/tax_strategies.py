@@ -43,7 +43,133 @@ class TaxStrategiesService:
     SIMPLE_MAX = 16000
     SOLO_401K_EMPLOYEE_MAX = 23000
     SOLO_401K_TOTAL_MAX = 69000
-    
+
+    # Income type to relevant strategies mapping (REQ-21)
+    INCOME_TYPE_STRATEGIES = {
+        'w2_employee': [
+            'retirement_contributions',  # 401(k) via employer
+            # HSA, FSA typically employer-provided
+        ],
+        'self_employed': [
+            'retirement_contributions',  # SEP-IRA, Solo 401(k)
+            'qbi_deduction',
+            'se_tax_deduction',
+            'se_health_insurance',
+            'home_office'
+        ],
+        'business_owner': [
+            'qbi_deduction',
+            'section_179',
+            'bonus_depreciation',
+            'rd_deduction',
+            'fmla_credit'
+        ],
+        'rental_income': [
+            'section_179',
+            'bonus_depreciation'
+        ],
+        'capital_gains': [
+            'qsbs_exclusion'
+        ],
+        'investment_income': []  # General investment income has no specific strategy prioritization
+    }
+
+    @staticmethod
+    def detect_income_types(client_id):
+        """
+        Detect income types from client's extracted data based on form types present.
+
+        Args:
+            client_id: Client ID to check
+
+        Returns:
+            list: Income type strings (e.g., ['w2_employee', 'self_employed'])
+        """
+        from models import ExtractedData
+        from models import db
+
+        # Query distinct form types for this client
+        forms = db.session.query(ExtractedData.form_type).filter_by(
+            client_id=client_id
+        ).distinct().all()
+        form_types = {f[0] for f in forms if f[0]}
+
+        income_types = []
+
+        if 'W-2' in form_types:
+            income_types.append('w2_employee')
+        if 'Schedule C' in form_types:
+            income_types.append('self_employed')
+        if 'Schedule E' in form_types:
+            income_types.append('rental_income')
+        if 'K-1' in form_types:
+            income_types.append('business_owner')
+        if 'Schedule D' in form_types or 'Form 8949' in form_types:
+            income_types.append('capital_gains')
+        if '1099-INT' in form_types or '1099-DIV' in form_types:
+            income_types.append('investment_income')
+
+        return income_types if income_types else ['unknown']
+
+    @staticmethod
+    def filter_strategies_by_income_type(strategies, income_types):
+        """
+        Prioritize strategies relevant to detected income types.
+
+        Moves relevant strategies to front of list, others follow.
+
+        Args:
+            strategies: List of AnalysisResult objects
+            income_types: List of income type strings
+
+        Returns:
+            list: Sorted strategies with relevant ones first
+        """
+        import json
+
+        # Build set of relevant strategy IDs
+        relevant_ids = set()
+        for income_type in income_types:
+            relevant_ids.update(TaxStrategiesService.INCOME_TYPE_STRATEGIES.get(income_type, []))
+
+        def get_relevance_key(strategy):
+            """Sort key: relevant strategies first, then by priority"""
+            try:
+                # Parse detailed_info from strategy_description JSON
+                info = json.loads(strategy.strategy_description)
+                strategy_id = info.get('strategy_id', '')
+                is_relevant = strategy_id in relevant_ids
+                return (0 if is_relevant else 1, strategy.priority)
+            except (json.JSONDecodeError, AttributeError):
+                return (1, strategy.priority)
+
+        return sorted(strategies, key=get_relevance_key)
+
+    @staticmethod
+    def get_personalized_strategies(data_by_form, client):
+        """
+        Get strategies personalized to client's income type.
+
+        Analyzes all strategies, then prioritizes by income type relevance.
+
+        Args:
+            data_by_form: Dictionary of form data
+            client: Client model instance
+
+        Returns:
+            tuple: (strategies_list, income_types_list)
+        """
+        # Detect income types
+        income_types = TaxStrategiesService.detect_income_types(client.id)
+
+        # Analyze all strategies
+        strategies = TaxStrategiesService.analyze_all_strategies(data_by_form, client)
+
+        # Filter/prioritize by income type
+        prioritized = TaxStrategiesService.filter_strategies_by_income_type(strategies, income_types)
+
+        return prioritized, income_types
+
     @staticmethod
     def analyze_all_strategies(data_by_form: Dict, client) -> List[AnalysisResult]:
         """

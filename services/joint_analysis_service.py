@@ -27,6 +27,7 @@ from models import db, Client, JointAnalysisSummary
 from services.analysis_engine import AnalysisEngine
 from services.tax_calculator import TaxCalculator
 from services.itemized_deduction_service import ItemizedDeductionService
+from services.joint_strategy_service import JointStrategyService
 import hashlib
 import json
 from datetime import datetime
@@ -306,6 +307,27 @@ class JointAnalysisService:
             except (json.JSONDecodeError, TypeError):
                 pass
 
+        # Generate joint strategies for cached result (REQ-22)
+        mfs_combined_for_strategies = {
+            'mfs_combined_tax': cached.mfs_combined_tax,
+            'mfs_spouse1_tax': cached.mfs_spouse1_tax,
+            'mfs_spouse2_tax': cached.mfs_spouse2_tax
+        }
+
+        mfj_result_for_strategies = {
+            'total_tax': cached.mfj_total_tax,
+            'combined_income': cached.mfj_combined_income,
+            'effective_rate': cached.mfj_effective_rate,
+            'marginal_rate': 24  # Approximate for cached results
+        }
+
+        joint_strategies = JointStrategyService.generate_joint_strategies(
+            spouse1_summary=spouse1_summary,
+            spouse2_summary=spouse2_summary,
+            mfj_result=mfj_result_for_strategies,
+            mfs_result=mfs_combined_for_strategies
+        )
+
         return {
             'spouse1': {
                 'summary': spouse1_summary,
@@ -348,7 +370,8 @@ class JointAnalysisService:
                 'mfs_total_tax': cached.mfs_combined_tax,
                 'reason': f"{cached.recommended_status} saves ${cached.savings_amount:,.2f}",
                 'notes': notes_list,
-            }
+            },
+            'joint_strategies': joint_strategies,  # REQ-22: MFJ-only strategies
         }
 
     @staticmethod
@@ -631,6 +654,20 @@ class JointAnalysisService:
             'notes': comparison_notes,
         }
 
+        # Step 7b: Generate joint-only strategies (REQ-22)
+        mfs_combined_for_strategies = {
+            'mfs_combined_tax': mfs_combined_tax,
+            'mfs_spouse1_tax': mfs_spouse1_result['total_tax'],
+            'mfs_spouse2_tax': mfs_spouse2_result['total_tax']
+        }
+
+        joint_strategies = JointStrategyService.generate_joint_strategies(
+            spouse1_summary=spouse1_summary,
+            spouse2_summary=spouse2_summary,
+            mfj_result=mfj_result,
+            mfs_result=mfs_combined_for_strategies
+        )
+
         # Step 8: Store result in cache
         if cached:
             cached.tax_year = tax_year
@@ -703,6 +740,7 @@ class JointAnalysisService:
             'mfs_spouse1': mfs_spouse1_result,
             'mfs_spouse2': mfs_spouse2_result,
             'comparison': comparison,
+            'joint_strategies': joint_strategies,  # REQ-22: MFJ-only strategies
         }
 
     @staticmethod

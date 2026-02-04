@@ -12,7 +12,8 @@ class Document(db.Model):
     tax_year = db.Column(db.Integer, nullable=True)
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
     ocr_status = db.Column(db.Text, default='pending')  # pending, processing, completed, failed
-    
+    attribution = db.Column(db.Text, default='taxpayer', nullable=False)  # 'taxpayer', 'spouse', 'joint'
+
     # Relationships
     extracted_data = db.relationship('ExtractedData', backref='document', lazy=True, cascade='all, delete-orphan')
     
@@ -25,6 +26,7 @@ class Document(db.Model):
             'file_type': self.file_type,
             'tax_year': self.tax_year,
             'uploaded_at': self.uploaded_at.isoformat() if self.uploaded_at else None,
-            'ocr_status': self.ocr_status
+            'ocr_status': self.ocr_status,
+            'attribution': self.attribution
         }
 

@@ -286,6 +286,19 @@ class JointAnalysisService:
         spouse1_strategies, spouse1_summary = AnalysisEngine.analyze_client(spouse1_id)
         spouse2_strategies, spouse2_summary = AnalysisEngine.analyze_client(spouse2_id)
 
+        # Get income types for cached results too (REQ-21)
+        from services.tax_strategies import TaxStrategiesService
+        spouse1_income_types = TaxStrategiesService.detect_income_types(spouse1_id)
+        spouse2_income_types = TaxStrategiesService.detect_income_types(spouse2_id)
+
+        # Prioritize strategies by income type
+        spouse1_strategies = TaxStrategiesService.filter_strategies_by_income_type(
+            spouse1_strategies, spouse1_income_types
+        )
+        spouse2_strategies = TaxStrategiesService.filter_strategies_by_income_type(
+            spouse2_strategies, spouse2_income_types
+        )
+
         notes_list = []
         if cached.comparison_notes:
             try:
@@ -296,11 +309,13 @@ class JointAnalysisService:
         return {
             'spouse1': {
                 'summary': spouse1_summary,
-                'strategies': [s.to_dict() for s in spouse1_strategies]
+                'strategies': [s.to_dict() for s in spouse1_strategies],
+                'income_types': spouse1_income_types  # REQ-21
             },
             'spouse2': {
                 'summary': spouse2_summary,
-                'strategies': [s.to_dict() for s in spouse2_strategies]
+                'strategies': [s.to_dict() for s in spouse2_strategies],
+                'income_types': spouse2_income_types  # REQ-21
             },
             'mfj': {
                 'combined_income': cached.mfj_combined_income,
@@ -389,6 +404,19 @@ class JointAnalysisService:
         # Step 4: Analyze each spouse individually
         spouse1_strategies, spouse1_summary = AnalysisEngine.analyze_client(spouse1_id)
         spouse2_strategies, spouse2_summary = AnalysisEngine.analyze_client(spouse2_id)
+
+        # Detect income types for personalization (REQ-21)
+        from services.tax_strategies import TaxStrategiesService
+        spouse1_income_types = TaxStrategiesService.detect_income_types(spouse1_id)
+        spouse2_income_types = TaxStrategiesService.detect_income_types(spouse2_id)
+
+        # Prioritize strategies by income type
+        spouse1_strategies = TaxStrategiesService.filter_strategies_by_income_type(
+            spouse1_strategies, spouse1_income_types
+        )
+        spouse2_strategies = TaxStrategiesService.filter_strategies_by_income_type(
+            spouse2_strategies, spouse2_income_types
+        )
 
         # Step 5: Calculate MFJ scenario (REQ-01, REQ-07)
         tax_year = spouse1_summary.get('tax_year') or 2026
@@ -663,11 +691,13 @@ class JointAnalysisService:
         return {
             'spouse1': {
                 'summary': spouse1_summary,
-                'strategies': [s.to_dict() for s in spouse1_strategies]
+                'strategies': [s.to_dict() for s in spouse1_strategies],
+                'income_types': spouse1_income_types  # REQ-21
             },
             'spouse2': {
                 'summary': spouse2_summary,
-                'strategies': [s.to_dict() for s in spouse2_strategies]
+                'strategies': [s.to_dict() for s in spouse2_strategies],
+                'income_types': spouse2_income_types  # REQ-21
             },
             'mfj': mfj_result,
             'mfs_spouse1': mfs_spouse1_result,

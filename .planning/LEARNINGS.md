@@ -81,6 +81,20 @@ Document discoveries, patterns, and anti-patterns encountered during development
 - **Net-new work:** Itemized deduction model/storage, SALT cap calculation, medical expense threshold, coordination validation
 - **Build order:** Add deduction_method to Client → itemized calculation service → extend JointAnalysisService
 
+**MFJ-Only Tax Strategies Require Explicit Flagging**
+- **Discovery:** Spousal IRA, EITC, education credits, student loan interest are completely unavailable for MFS
+- **Context:** Phase 4 per-spouse strategy personalization
+- **Pattern:** `STRATEGY_FILING_REQUIREMENTS` dictionary with requires/warning per strategy
+- **Implementation:** Filter strategies by filing status, show warning badge for incompatible status
+- **Source:** [IRS EITC Qualification](https://www.irs.gov/credits-deductions/individuals/earned-income-tax-credit/who-qualifies-for-the-earned-income-tax-credit-eitc), [IRS Education Credits](https://www.irs.gov/credits-deductions/individuals/education-credits-aotc-and-llc)
+
+**Income Type Determines Strategy Relevance**
+- **Discovery:** Different income types have different applicable strategies (LLC→SEP-IRA/QBI, W-2→401k/HSA)
+- **Context:** Phase 4 per-spouse strategy personalization
+- **Detection method:** Form presence in ExtractedData (W-2 present = W-2 employee, Schedule C = self-employed)
+- **Pattern:** `INCOME_TYPE_STRATEGIES` mapping income types to relevant strategy IDs
+- **Application:** Prioritize relevant strategies in display order, show "recommended for your income" badge
+
 ## What Doesn't Work
 
 ### Dual-Filer Tax Domain Anti-Patterns
@@ -133,6 +147,18 @@ Document discoveries, patterns, and anti-patterns encountered during development
 - **Impact:** Phase-out reduces $20k cap to $5k floor for high earners (MFS threshold $250k MAGI)
 - **Correct approach:** Include MAGI in SALT cap calculation, apply phase-out formula
 - **Source:** Phase 2 research finding
+
+**Showing Joint-Only Strategies Without Filing Status Context**
+- **What fails:** Displaying Spousal IRA recommendation when viewing MFS analysis
+- **Why it fails:** Strategy is unavailable for MFS, misleads user
+- **Correct approach:** Add filing_status_requirements to each strategy, show warning or hide for incompatible status
+- **Source:** Phase 4 research finding
+
+**Document Attribution Without Spouse Link Validation**
+- **What fails:** Allowing "Spouse" attribution on upload when client has no spouse_id
+- **Why it fails:** Data goes to wrong client or causes error
+- **Correct approach:** Only show attribution selector when client.spouse_id exists
+- **Source:** Phase 4 research finding
 
 ## Phase Learnings
 
@@ -280,11 +306,11 @@ Document discoveries, patterns, and anti-patterns encountered during development
 
 **Phase 1 Success Criteria Validated:**
 
-- ✅ TaxCalculator supports all filing statuses (verified: lines 304-312, 96-108)
-- ✅ Caching pattern extends to joint analysis (verified: lines 14-35 pattern)
-- ✅ Blueprint registration pattern documented (verified: api.py lines 1-13)
-- ✅ Model pattern established (verified: AnalysisSummary lines 6-54)
-- ✅ Pitfall solutions documented (7 critical pitfalls with prevention strategies)
+- TaxCalculator supports all filing statuses (verified: lines 304-312, 96-108)
+- Caching pattern extends to joint analysis (verified: lines 14-35 pattern)
+- Blueprint registration pattern documented (verified: api.py lines 1-13)
+- Model pattern established (verified: AnalysisSummary lines 6-54)
+- Pitfall solutions documented (7 critical pitfalls with prevention strategies)
 
 **Confidence Assessment:** HIGH — All implementation questions answered, patterns verified in codebase, no blocking unknowns.
 
@@ -357,6 +383,72 @@ Document discoveries, patterns, and anti-patterns encountered during development
 
 **Confidence Assessment:** HIGH — IRS rules verified with official sources, implementation patterns clear from existing codebase, gaps identified for planning.
 
+### Phase 4 Research: Dual-Filer Strategies and Workflow
+
+**Phase:** Phase 4 Research
+**Domain:** Per-spouse strategy personalization, joint optimization strategies, workflow enhancement
+**Date:** 2026-02-04
+
+**Key Discoveries:**
+
+1. **TaxStrategiesService Lacks Income-Type Awareness**
+   - **Discovery:** Existing 10 strategies analyzed generically, not tailored to income type
+   - **Gap:** LLC owner sees same strategies as W-2 employee
+   - **Solution:** Detect income types from form presence (W-2, Schedule C, K-1, etc.)
+   - **Pattern:** `INCOME_TYPE_STRATEGIES` mapping income types to relevant strategy IDs
+   - **Confidence:** HIGH — Verified in services/tax_strategies.py analysis
+
+2. **Joint-Only Strategies Not Generated**
+   - **Discovery:** No Spousal IRA, bracket utilization, or other MFJ-only strategies exist
+   - **Gap:** JointAnalysisService compares taxes but doesn't recommend joint optimization strategies
+   - **Solution:** Create `JointStrategyService` to generate MFJ-only recommendations
+   - **Key strategies:** Spousal IRA ($7,500 limit 2026), Bracket utilization, EITC eligibility
+   - **Confidence:** HIGH — IRS rules verified, implementation patterns clear
+
+3. **Credit Filtering Exists But Lacks "Why"**
+   - **Discovery:** JointAnalysisService._filter_strategies_by_filing_status() removes MFS-ineligible credits
+   - **Gap:** Removed silently, no warning shown when viewing individual analysis for MFS
+   - **Solution:** Add feasibility warnings with STRATEGY_FILING_REQUIREMENTS dictionary
+   - **UI pattern:** Warning badge on strategy card: "Requires MFJ filing status"
+   - **Confidence:** HIGH — Verified in services/joint_analysis_service.py lines 120-147
+
+4. **Spouse Linking Workflow Is Manual**
+   - **Discovery:** /clients/<id>/link-spouse endpoint exists but UI flow is manual
+   - **Gap:** User must create clients separately, manually enter spouse_id in edit form
+   - **Solution:** "Create Married Couple" button with two-column form, auto-link + redirect
+   - **Implementation:** POST /api/clients/create-couple endpoint, joint_analysis_url in response
+   - **Confidence:** HIGH — UI pattern straightforward, follows existing modal pattern
+
+5. **Document Attribution Not Supported**
+   - **Discovery:** Document model has client_id but no attribution field
+   - **Gap:** Cannot tag W-2 as belonging to spouse during upload
+   - **Solution:** Add `attribution` column to Document ('taxpayer', 'spouse', 'joint')
+   - **Data flow:** If attribution='spouse', route extracted data to client.spouse_id
+   - **Confidence:** HIGH — Model change is simple, upload UI enhancement follows existing patterns
+
+6. **Manual Entry Not Available**
+   - **Discovery:** All income data requires document upload + OCR
+   - **Gap:** No alternative for manual income entry
+   - **Solution:** Add manual entry form alongside upload (tab or accordion UI)
+   - **Implementation:** Create ExtractedData records with form_type='MANUAL_ENTRY'
+   - **Confidence:** MEDIUM — UI design decision, backend straightforward
+
+**Recommended Build Order:**
+
+1. **Wave 1:** Spouse linking workflow (REQ-24) — Enables testing of other features
+2. **Wave 2:** Document attribution (REQ-25) + Manual entry (REQ-26) — Data entry improvements
+3. **Wave 3:** Per-spouse strategies (REQ-21), Joint strategies (REQ-22), Feasibility flags (REQ-23)
+
+**Pitfalls Identified:**
+
+1. Showing MFJ-only strategies to MFS filers without warning
+2. Attribution selector without spouse link validation
+3. Joint strategies generated before both spouses have data
+4. Income type detection fails when no documents uploaded
+5. Duplicate strategy recommendations in individual + joint sections
+
+**Confidence Assessment:** HIGH — Existing codebase patterns clear, IRS rules verified, no architectural changes needed.
+
 ---
 
 ## Pattern Library
@@ -394,6 +486,20 @@ Document discoveries, patterns, and anti-patterns encountered during development
 - **Example:** Spouse A itemizes → validation checks Spouse B → returns cascade requirement
 - **When to use:** Rule affects multiple entities, needs user confirmation, complex logic
 - **Source:** Phase 2 research finding
+
+**Pattern: Income-Type Strategy Relevance**
+- **Use case:** Tailor strategy recommendations to user's income profile
+- **Implementation:** Detect income types from form presence, map to relevant strategies
+- **Example:** W-2 present → prioritize 401(k), HSA; Schedule C present → prioritize SEP-IRA, QBI
+- **When to use:** Personalized recommendations based on user characteristics
+- **Source:** Phase 4 research finding
+
+**Pattern: Strategy Filing Requirements Dictionary**
+- **Use case:** Show warnings when strategy requires different filing status
+- **Implementation:** Dictionary with requires/warning per strategy, check at display time
+- **Example:** `{'spousal_ira': {'requires': 'married_joint', 'warning': 'Requires MFJ'}}`
+- **When to use:** Filing-status-dependent feature eligibility
+- **Source:** Phase 4 research finding
 
 ### Anti-Patterns to Avoid
 

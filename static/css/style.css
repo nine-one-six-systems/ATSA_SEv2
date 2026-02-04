@@ -1375,6 +1375,114 @@ h3 {
     border-bottom: 2px solid #3498db;
 }
 
+/* Per-spouse strategy display (REQ-21) */
+.spouse-strategies {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.spouse-strategies h4 {
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    color: #2c3e50;
+}
+
+.income-type-badge {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 1rem;
+    padding: 0.25rem 0.5rem;
+    background: #e9ecef;
+    border-radius: 4px;
+    display: inline-block;
+}
+
+.strategies-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.strategy-item {
+    padding: 0.75rem;
+    border-radius: 4px;
+    background: #f9f9f9;
+    border-left: 3px solid #ddd;
+}
+
+.strategy-item.relevant {
+    border-left-color: #4caf50;
+    background: #f1f8e9;
+}
+
+.strategy-item.status-good {
+    border-left-color: #4caf50;
+}
+
+.strategy-item.status-partial {
+    border-left-color: #ff9800;
+}
+
+.strategy-item.status-warning {
+    border-left-color: #f44336;
+}
+
+.strategy-item.status-error {
+    border-left-color: #e74c3c;
+}
+
+.strategy-item.status-neutral {
+    border-left-color: #95a5a6;
+}
+
+.strategy-item .strategy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.strategy-item .strategy-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.relevance-badge {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    background: #4caf50;
+    color: white;
+    border-radius: 3px;
+}
+
+.strategy-status {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.strategy-item .strategy-recommendations {
+    margin: 0.5rem 0 0 1rem;
+    padding: 0;
+    font-size: 0.8rem;
+    color: #555;
+    border-left: none;
+    background: transparent;
+}
+
+.strategy-item .strategy-recommendations li {
+    margin-bottom: 0.25rem;
+}
+
+.no-data {
+    color: #7f8c8d;
+    font-style: italic;
+    padding: 1rem 0;
+}
+
 /* Responsive: stack at 768px */
 @media (max-width: 768px) {
     .joint-analysis-page {

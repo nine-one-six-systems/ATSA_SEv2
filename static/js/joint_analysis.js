@@ -211,12 +211,13 @@ async function loadJointAnalysis() {
         displaySpouseSummary('spouse1', result.spouse1, client1);
         displaySpouseSummary('spouse2', result.spouse2, client2);
 
-        // Display comparison
+        // Display comparison with joint strategies (REQ-22)
         displayComparison(
             result.mfj,
             result.mfs_spouse1,
             result.mfs_spouse2,
-            result.comparison
+            result.comparison,
+            result.joint_strategies
         );
 
         showSuccess('Joint analysis loaded successfully');
@@ -302,6 +303,214 @@ function displaySpouseSummary(panelId, data, client) {
                 <div class="summary-value">${formatPercent(summary.effective_tax_rate)}%</div>
             </div>
         </div>
+
+        ${renderSpouseStrategies(data.strategies, data.income_types)}
+    `;
+}
+
+// ============================================================
+// STRATEGY RENDERING (REQ-21)
+// ============================================================
+
+/**
+ * Render strategy recommendations for a spouse.
+ * @param {Array} strategies - Strategy objects from API
+ * @param {Array} incomeTypes - Income type strings (e.g., ['self_employed'])
+ * @returns {string} HTML for strategies section
+ */
+function renderSpouseStrategies(strategies, incomeTypes) {
+    if (!strategies || strategies.length === 0) {
+        return '<p class="no-data">No strategies analyzed yet</p>';
+    }
+
+    // Format income types for display
+    const incomeTypeLabels = {
+        'w2_employee': 'W-2 Employee',
+        'self_employed': 'Self-Employed',
+        'business_owner': 'Business Owner',
+        'rental_income': 'Rental Income',
+        'capital_gains': 'Capital Gains',
+        'investment_income': 'Investment Income',
+        'unknown': 'Unknown'
+    };
+
+    const incomeTypesDisplay = (incomeTypes || [])
+        .map(t => incomeTypeLabels[t] || t)
+        .join(', ');
+
+    // Build strategy cards HTML
+    const strategiesHtml = strategies.slice(0, 5).map(strategy => {
+        const info = parseStrategyInfo(strategy);
+        const statusClass = getStatusClass(info.status);
+        const isRelevant = isStrategyRelevant(info.strategy_id, incomeTypes);
+
+        return `
+            <div class="strategy-item ${statusClass} ${isRelevant ? 'relevant' : ''}">
+                <div class="strategy-header">
+                    <span class="strategy-name">${strategy.strategy_name}</span>
+                    ${isRelevant ? '<span class="relevance-badge">Recommended</span>' : ''}
+                </div>
+                <div class="strategy-status">${formatStatus(info.status)}</div>
+                ${info.recommendations && info.recommendations.length > 0 ?
+                    `<ul class="strategy-recommendations">
+                        ${info.recommendations.slice(0, 2).map(r => `<li>${r}</li>`).join('')}
+                    </ul>` : ''
+                }
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div class="spouse-strategies">
+            <h4>Tax Strategies</h4>
+            <div class="income-type-badge">Income: ${incomeTypesDisplay || 'Not detected'}</div>
+            <div class="strategies-list">
+                ${strategiesHtml}
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Parse strategy info from strategy_description JSON
+ */
+function parseStrategyInfo(strategy) {
+    try {
+        return JSON.parse(strategy.strategy_description || '{}');
+    } catch (e) {
+        return { status: 'UNKNOWN', recommendations: [] };
+    }
+}
+
+/**
+ * Get CSS class for strategy status
+ */
+function getStatusClass(status) {
+    const statusClasses = {
+        'FULLY_UTILIZED': 'status-good',
+        'PARTIALLY_UTILIZED': 'status-partial',
+        'NOT_UTILIZED': 'status-warning',
+        'POTENTIALLY_MISSED': 'status-warning',
+        'NOT_APPLICABLE': 'status-neutral',
+        'ERROR_DETECTED': 'status-error'
+    };
+    return statusClasses[status] || 'status-neutral';
+}
+
+/**
+ * Format status for display
+ */
+function formatStatus(status) {
+    const statusLabels = {
+        'FULLY_UTILIZED': 'Fully Utilized',
+        'PARTIALLY_UTILIZED': 'Partially Utilized',
+        'NOT_UTILIZED': 'Not Used',
+        'POTENTIALLY_MISSED': 'Potential Opportunity',
+        'NOT_APPLICABLE': 'N/A',
+        'ERROR_DETECTED': 'Review Needed'
+    };
+    return statusLabels[status] || status;
+}
+
+/**
+ * Check if strategy is relevant to income types
+ */
+function isStrategyRelevant(strategyId, incomeTypes) {
+    const INCOME_TYPE_STRATEGIES = {
+        'w2_employee': ['retirement_contributions'],
+        'self_employed': ['retirement_contributions', 'qbi_deduction', 'se_tax_deduction', 'se_health_insurance', 'home_office'],
+        'business_owner': ['qbi_deduction', 'section_179', 'bonus_depreciation', 'rd_deduction', 'fmla_credit'],
+        'rental_income': ['section_179', 'bonus_depreciation'],
+        'capital_gains': ['qsbs_exclusion']
+    };
+
+    return (incomeTypes || []).some(type => {
+        const relevantStrategies = INCOME_TYPE_STRATEGIES[type] || [];
+        return relevantStrategies.includes(strategyId);
+    });
+}
+
+// ============================================================
+// JOINT STRATEGIES RENDERING (REQ-22, REQ-23)
+// ============================================================
+
+/**
+ * Strategy filing requirements for feasibility warnings (REQ-23)
+ */
+const STRATEGY_FILING_REQUIREMENTS = {
+    'spousal_ira': { requires: 'married_joint', warning: 'Spousal IRA requires filing jointly' },
+    'eitc_eligibility': { requires: 'married_joint', warning: 'EITC unavailable when filing separately' },
+    'education_credits': { requires: 'married_joint', warning: 'Education credits unavailable when filing separately' },
+    'student_loan_interest': { requires: 'married_joint', warning: 'Student loan interest deduction unavailable when filing separately' },
+    'bracket_utilization': { requires: 'married_joint', warning: 'MFJ bracket benefits lost when filing separately' }
+};
+
+/**
+ * Check if strategy has filing status warning for current analysis
+ * @param {string} strategyId - Strategy identifier
+ * @param {string} currentFilingContext - 'MFJ' or 'MFS'
+ * @returns {string|null} Warning message or null
+ */
+function getStrategyFeasibilityWarning(strategyId, currentFilingContext) {
+    const req = STRATEGY_FILING_REQUIREMENTS[strategyId];
+    if (req && req.requires === 'married_joint' && currentFilingContext !== 'MFJ') {
+        return req.warning;
+    }
+    return null;
+}
+
+/**
+ * Render joint-only optimization strategies (REQ-22).
+ * @param {Array} strategies - Joint strategy objects from API
+ * @param {string} recommendedStatus - 'MFJ' or 'MFS' from comparison
+ * @returns {string} HTML for joint strategies section
+ */
+function renderJointStrategies(strategies, recommendedStatus) {
+    if (!strategies || strategies.length === 0) {
+        return '';
+    }
+
+    const isMFJRecommended = recommendedStatus === 'MFJ';
+
+    const strategiesHtml = strategies.map(strategy => {
+        const statusClass = getStatusClass(strategy.status);
+        const hasBenefit = strategy.potential_benefit > 0;
+
+        // Show warning if viewing MFS but strategy requires MFJ (REQ-23)
+        const showMFSWarning = !isMFJRecommended && strategy.requires_filing_status === 'married_joint';
+
+        return `
+            <div class="joint-strategy-card ${statusClass} ${showMFSWarning ? 'mfs-warning' : ''}">
+                <div class="strategy-header">
+                    <span class="strategy-name">${strategy.strategy_name}</span>
+                    ${strategy.requires_filing_status === 'married_joint' ?
+                        '<span class="mfj-only-badge">MFJ Only</span>' : ''}
+                </div>
+                ${showMFSWarning ?
+                    `<div class="feasibility-warning">
+                        <span class="warning-icon">!</span>
+                        ${strategy.warning_if_mfs}
+                    </div>` : ''
+                }
+                <div class="strategy-description">${strategy.description}</div>
+                ${hasBenefit ?
+                    `<div class="strategy-benefit">Potential Savings: $${formatCurrency(strategy.potential_benefit)}</div>` : ''
+                }
+                ${strategy.recommendation ?
+                    `<div class="strategy-recommendation">${strategy.recommendation}</div>` : ''
+                }
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div class="joint-strategies-section">
+            <h4>Joint Optimization Strategies</h4>
+            <p class="section-note">These strategies are ${isMFJRecommended ? 'available' : 'only available'} when filing jointly (MFJ)</p>
+            <div class="joint-strategies-grid">
+                ${strategiesHtml}
+            </div>
+        </div>
     `;
 }
 
@@ -310,13 +519,14 @@ function displaySpouseSummary(panelId, data, client) {
 // ============================================================
 
 /**
- * Render comparison section with MFJ vs MFS cards and table.
+ * Render comparison section with MFJ vs MFS cards, joint strategies, and table.
  * @param {Object} mfj - MFJ calculation results
  * @param {Object} mfs1 - MFS spouse 1 results
  * @param {Object} mfs2 - MFS spouse 2 results
  * @param {Object} comparison - { recommended_status, savings_amount, reason, notes }
+ * @param {Array} jointStrategies - MFJ-only strategy recommendations (REQ-22)
  */
-function displayComparison(mfj, mfs1, mfs2, comparison) {
+function displayComparison(mfj, mfs1, mfs2, comparison, jointStrategies) {
     const comparisonDiv = document.getElementById('comparison-content');
 
     if (!mfj || !comparison) {
@@ -363,6 +573,8 @@ function displayComparison(mfj, mfs1, mfs2, comparison) {
         </div>
 
         ${notesHtml}
+
+        ${renderJointStrategies(jointStrategies, recommendedStatus)}
 
         <!-- REQ-20: Four-column line-by-line breakdown -->
         <h4>Filing Status Comparison Report</h4>

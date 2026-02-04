@@ -1,4 +1,5 @@
 from models import db, IRSReference, AnalysisSummary, TaxBracket, StandardDeduction
+from sqlalchemy import text
 
 def init_database():
     """Initialize database tables and seed IRS references"""
@@ -9,8 +10,16 @@ def init_database():
     from models.analysis import AnalysisResult, AnalysisSummary
     from models.irs_reference import IRSReference
     from models.tax_tables import TaxBracket, StandardDeduction
-    
+    from models.joint_analysis import JointAnalysisSummary
+
     db.create_all()
+
+    # Enable WAL mode for concurrent reads + writes (REQ-12)
+    # Dual-filer analysis doubles write frequency; WAL prevents "database locked" errors
+    db.session.execute(text("PRAGMA journal_mode=WAL"))
+    db.session.execute(text("PRAGMA busy_timeout=30000"))
+    db.session.commit()
+
     seed_irs_references()
     populate_tax_tables()
 

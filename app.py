@@ -40,7 +40,11 @@ def create_app():
     @app.route('/calculator.html')
     def calculator():
         return render_template('calculator.html')
-    
+
+    @app.route('/joint-analysis.html')
+    def joint_analysis():
+        return render_template('joint_analysis.html')
+
     # Initialize database tables
     with app.app_context():
         init_database()

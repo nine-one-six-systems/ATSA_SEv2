@@ -154,6 +154,94 @@ Document discoveries, patterns, and anti-patterns encountered during development
 
 **Key Takeaway:** Tax calculation accuracy is foundational. All 7 critical pitfalls must be addressed before building UI. Service layer orchestration preserves existing code while adding joint analysis. Bidirectional cache invalidation prevents stale data. SQLite WAL mode must be enabled immediately.
 
+### Phase 1 Research: Core Dual-Filer Calculation Engine
+
+**Phase:** Phase 1 Research
+**Domain:** Dual-filer MFJ/MFS calculation engine
+**Date:** 2026-02-04
+
+**Key Discoveries:**
+
+1. **TaxCalculator Already Handles All Filing Statuses**
+   - **Discovery:** Existing `TaxCalculator` (lines 304-312) already has correct QBI thresholds for MFS
+   - **Verification:** `married_separate` uses $197,300 threshold (same as single), not half of MFJ
+   - **Impact:** No modifications needed to TaxCalculator — use as-is for MFJ/MFS calculations
+   - **Confidence:** HIGH — Verified in existing code
+
+2. **ExtractedData Fields Are Form-Agnostic**
+   - **Discovery:** `ExtractedData` stores `form_type`, `field_name`, `field_value` generically
+   - **Impact:** No schema changes needed for income attribution (T/S/J) — can store as field metadata
+   - **Pattern:** `field_name='wages:taxpayer'` or `field_name='wages:spouse'` or `field_name='wages:joint'`
+   - **Alternative:** Add `attribution` column to `ExtractedData` (cleaner but requires migration)
+
+3. **Bidirectional Cache Invalidation Has Side Effect**
+   - **Discovery:** Extending `_calculate_data_version_hash()` to include spouse means individual analyses refresh when spouse data changes
+   - **Trade-off:** More recalculations (wife's change → husband's individual analysis refreshes) vs stale data prevention
+   - **Decision:** Accept increased recalculations — correctness over performance
+   - **UI requirement:** Phase 3 must explain "Analysis includes both spouses' data"
+
+4. **SQLite WAL Mode Is Non-Negotiable**
+   - **Discovery:** Default SQLite mode = single writer, dual-filer = 2x write frequency
+   - **Evidence:** Pitfall #6 documents "database locked" errors with concurrent analysis + upload
+   - **Solution:** `PRAGMA journal_mode=WAL` + `PRAGMA busy_timeout=30000` in `init_db.py`
+   - **Timing:** Must enable in Phase 1 before any dual-writer testing
+   - **Fallback:** If WAL insufficient, migrate to PostgreSQL (unlikely for single tax pro use case)
+
+5. **Blueprint Pattern Already Established**
+   - **Discovery:** `routes/api.py` shows clean blueprint registration pattern (lines 1-13)
+   - **Pattern:** Each feature domain gets own blueprint file, registered in `api_bp`
+   - **Application:** Create `routes/joint_analysis.py` with `joint_analysis_bp`, register in `api.py`
+   - **Consistency:** Follow existing route structure from `routes/analysis.py` (lines 7-21)
+
+6. **Model Registration Pattern Documented**
+   - **Discovery:** `models/__init__.py` imports all models, exports in `__all__` list
+   - **Pattern:** Add `JointAnalysisSummary` to imports and `__all__` list
+   - **Database:** `db.create_all()` in `init_db.py` handles table creation automatically
+
+7. **Credit Eligibility Matrix Required**
+   - **Discovery:** No existing credit eligibility validation by filing status
+   - **Gap:** `TaxStrategiesService` doesn't filter strategies by filing status
+   - **Solution:** Create `CREDIT_ELIGIBILITY` dict in `JointAnalysisService`, filter MFS strategies
+   - **Example:** EITC, student loan interest, education credits all unavailable for MFS
+   - **Phase 1 scope:** Filter strategies in joint analysis, don't modify TaxStrategiesService yet
+
+**Technical Patterns Verified:**
+
+- **Hash-based caching:** Lines 14-35, 56-72 in `analysis_engine.py` — pattern extends to joint hash
+- **Filing status bracket lookup:** Lines 83-108 in `tax_calculator.py` — already supports 'married_separate'
+- **Blueprint registration:** Lines 1-13 in `routes/api.py` — add joint_analysis_bp following this pattern
+- **Model to_dict() serialization:** Lines 27-54 in `models/analysis.py` — JointAnalysisSummary follows same pattern
+
+**Open Questions Resolved:**
+
+1. **Q: Does TaxCalculator need modification for MFS?**
+   - **A:** No — lines 304-312 show correct thresholds already implemented
+
+2. **Q: How to store income attribution (T/S/J)?**
+   - **A:** Phase 1 can defer this (no T/S/J needed for basic MFJ/MFS comparison)
+   - **Phase 2:** Add `attribution` column to `ExtractedData` or use field name convention
+
+3. **Q: Should individual analyses auto-refresh when spouse changes?**
+   - **A:** Yes — bidirectional invalidation prevents stale data (correctness > performance)
+
+**Recommendations for Phase 1 Implementation:**
+
+1. **Build Order:** Service layer → Model → API routes → Database init (WAL mode)
+2. **No Modifications:** Don't change TaxCalculator, AnalysisEngine, TaxStrategiesService
+3. **Credit Filtering:** Implement in JointAnalysisService, not in existing services
+4. **Testing Priority:** Test cache invalidation, concurrent analysis, MFS credit exclusion
+5. **Documentation:** Add docstrings explaining bidirectional cache behavior
+
+**Phase 1 Success Criteria Validated:**
+
+- ✅ TaxCalculator supports all filing statuses (verified: lines 304-312, 96-108)
+- ✅ Caching pattern extends to joint analysis (verified: lines 14-35 pattern)
+- ✅ Blueprint registration pattern documented (verified: api.py lines 1-13)
+- ✅ Model pattern established (verified: AnalysisSummary lines 6-54)
+- ✅ Pitfall solutions documented (7 critical pitfalls with prevention strategies)
+
+**Confidence Assessment:** HIGH — All implementation questions answered, patterns verified in codebase, no blocking unknowns.
+
 ---
 
 ## Pattern Library

@@ -23,10 +23,10 @@ This milestone adds dual-filer support for married couples, enabling a tax profe
 **Plans:** 4 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Infrastructure & Model (WAL mode, JointAnalysisSummary, model registration)
-- [ ] 01-02-PLAN.md — Service Layer (JointAnalysisService with MFJ/MFS calculation, cache invalidation)
-- [ ] 01-03-PLAN.md — Credit Eligibility (credit filtering, QBI threshold enforcement)
-- [ ] 01-04-PLAN.md — API Endpoints (blueprint registration, routes, comparison output)
+- [x] 01-01-PLAN.md — Infrastructure & Model (WAL mode, JointAnalysisSummary, model registration)
+- [x] 01-02-PLAN.md — Service Layer (JointAnalysisService with MFJ/MFS calculation, cache invalidation)
+- [x] 01-03-PLAN.md — Credit Eligibility (credit filtering, QBI threshold enforcement)
+- [x] 01-04-PLAN.md — API Endpoints (blueprint registration, routes, comparison output)
 
 **Requirements:**
 | ID | Requirement |
@@ -78,9 +78,9 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Itemized Deduction Foundation (Client.deduction_method, ItemizedDeduction model)
-- [ ] 02-02-PLAN.md — Itemized Calculation & SALT Cap Logic (calculate_itemized_deductions, SALT cap with phase-out, expense allocation)
-- [ ] 02-03-PLAN.md — MFS Coordination & Joint Analysis Extension (deduction coordination validation, extend analyze_joint for itemized path)
+- [x] 02-01-PLAN.md — Itemized Deduction Foundation (Client.deduction_method, ItemizedDeduction model)
+- [x] 02-02-PLAN.md — Itemized Calculation & SALT Cap Logic (calculate_itemized_deductions, SALT cap with phase-out, expense allocation)
+- [x] 02-03-PLAN.md — MFS Coordination & Joint Analysis Extension (deduction coordination validation, extend analyze_joint for itemized path)
 
 **Requirements:**
 | ID | Requirement |
@@ -115,10 +115,11 @@ Plans:
 
 **Dependencies:** Phase 1 (API endpoints must return joint analysis data), Phase 2 (compliance rules must be enforced so displayed numbers are correct)
 
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (awaiting /gsd:plan-phase)
+- [ ] 03-01-PLAN.md — Template, Route, and Base CSS (split-screen HTML structure, Flask route, responsive styles)
+- [ ] 03-02-PLAN.md — JavaScript Implementation (Split.js, API integration, spouse panels, comparison display)
 
 **Requirements:**
 | ID | Requirement |
@@ -139,7 +140,7 @@ Plans:
 **Key Files to Create/Modify:**
 - `templates/joint_analysis.html` (NEW) -- split-screen template with Jinja2 structure
 - `static/js/joint_analysis.js` (NEW) -- loadJointAnalysis(), renderSpousePanel(), renderFilingComparison()
-- `static/css/joint_analysis.css` (NEW) -- split-screen grid layout, responsive stacking, comparison cards
+- `static/css/style.css` (MODIFY) -- split-screen grid layout, responsive stacking, comparison cards
 - `app.py` (MODIFY) -- add route for joint analysis template page
 - Split.js loaded via CDN in template
 
@@ -241,10 +242,10 @@ Orphaned: 0
 |-------|------|:------------:|--------|
 | 1 | Core Dual-Filer Calculation Engine | 12 | Complete |
 | 2 | MFS-Specific Compliance Logic | 3 | Complete |
-| 3 | Split-Screen UI and Comparison View | 5 | Not Started |
+| 3 | Split-Screen UI and Comparison View | 5 | Planned |
 | 4 | Dual-Filer Strategies and Workflow | 6 | Not Started |
 
 ---
 
 *Roadmap created: 2026-02-04*
-*Next: Execute Phase 1*
+*Next: Execute Phase 3*

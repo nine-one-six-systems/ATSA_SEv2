@@ -64,3 +64,31 @@ def get_comparison_summary(spouse1_id, spouse2_id):
         return jsonify({'error': str(e)}), 400
     except Exception as e:
         return jsonify({'error': f'Comparison failed: {str(e)}'}), 500
+
+
+@joint_analysis_bp.route('/validate-deduction-method', methods=['POST'])
+def validate_deduction_method():
+    """
+    Validate deduction method change for MFS coordination (REQ-09).
+
+    Request body: {"client_id": int, "new_method": "standard" or "itemized"}
+    Response: {"allowed": bool, "message": str, "action": str, ...}
+    """
+    try:
+        data = request.get_json()
+        client_id = data.get('client_id')
+        new_method = data.get('new_method')
+
+        if not client_id or not new_method:
+            return jsonify({'error': 'client_id and new_method required'}), 400
+
+        if new_method not in ['standard', 'itemized']:
+            return jsonify({'error': 'new_method must be "standard" or "itemized"'}), 400
+
+        result = JointAnalysisService.validate_deduction_method_change(client_id, new_method)
+        return jsonify(result), 200
+
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

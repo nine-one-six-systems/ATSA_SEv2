@@ -75,10 +75,12 @@ Plans:
 
 **Dependencies:** Phase 1 (MFS calculation engine must exist before compliance rules can be layered on)
 
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (awaiting /gsd:plan-phase)
+- [ ] 02-01-PLAN.md — Itemized Deduction Foundation (Client.deduction_method, ItemizedDeduction model)
+- [ ] 02-02-PLAN.md — Itemized Calculation & SALT Cap Logic (calculate_itemized_deductions, SALT cap with phase-out, expense allocation)
+- [ ] 02-03-PLAN.md — MFS Coordination & Joint Analysis Extension (deduction coordination validation, extend analyze_joint for itemized path)
 
 **Requirements:**
 | ID | Requirement |
@@ -89,12 +91,14 @@ Plans:
 
 **Success Criteria:**
 1. When one spouse selects itemized deductions for MFS, the system blocks the other spouse from using standard deduction and displays a warning explaining the IRS coordination rule
-2. A California couple with $60,000 in combined state/local taxes sees SALT capped at $20,000 per spouse on MFS (not $40,000) and $40,000 total on MFJ -- the difference appears in the comparison
+2. A California couple with $60,000 in combined state/local taxes sees SALT capped at $20,000 per spouse on MFS and $40,400 total on MFJ -- the difference appears in the comparison
 3. Mortgage interest of $24,000 can be allocated as 60% husband / 40% wife for MFS, and the split correctly flows through each spouse's itemized deduction calculation
 
 **Key Files to Create/Modify:**
 - `services/joint_analysis_service.py` (MODIFY) -- add deduction coordination validation, SALT cap enforcement, expense allocation logic
-- `models/joint_analysis.py` (MODIFY) -- add fields for deduction method tracking, expense allocation
+- `models/client.py` (MODIFY) -- add deduction_method column
+- `models/itemized_deduction.py` (NEW) -- ItemizedDeduction model with Schedule A categories and allocation metadata
+- `services/itemized_deduction_service.py` (NEW) -- Itemized deduction calculation service with SALT cap and expense allocation
 - `routes/joint_analysis.py` (MODIFY) -- add validation endpoints for deduction coordination
 
 **Pitfalls to Address:**
@@ -235,7 +239,7 @@ Orphaned: 0
 
 | Phase | Name | Requirements | Status |
 |-------|------|:------------:|--------|
-| 1 | Core Dual-Filer Calculation Engine | 12 | Not Started |
+| 1 | Core Dual-Filer Calculation Engine | 12 | Complete |
 | 2 | MFS-Specific Compliance Logic | 3 | Not Started |
 | 3 | Split-Screen UI and Comparison View | 5 | Not Started |
 | 4 | Dual-Filer Strategies and Workflow | 6 | Not Started |

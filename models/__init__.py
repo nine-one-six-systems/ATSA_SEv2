@@ -7,8 +7,9 @@ from models.document import Document
 from models.extracted_data import ExtractedData
 from models.analysis import AnalysisResult, AnalysisSummary
 from models.joint_analysis import JointAnalysisSummary
+from models.itemized_deduction import ItemizedDeduction
 from models.irs_reference import IRSReference
 from models.tax_tables import TaxBracket, StandardDeduction
 
-__all__ = ['db', 'Client', 'Document', 'ExtractedData', 'AnalysisResult', 'AnalysisSummary', 'JointAnalysisSummary', 'IRSReference', 'TaxBracket', 'StandardDeduction']
+__all__ = ['db', 'Client', 'Document', 'ExtractedData', 'AnalysisResult', 'AnalysisSummary', 'JointAnalysisSummary', 'ItemizedDeduction', 'IRSReference', 'TaxBracket', 'StandardDeduction']
 

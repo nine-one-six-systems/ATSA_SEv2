@@ -13,6 +13,7 @@ class Client(db.Model):
     last_name = db.Column(db.Text, nullable=False)
     ssn = db.Column(db.Text, nullable=True)  # Encrypted
     filing_status = db.Column(db.Text, nullable=False)  # single, married_joint, married_separate, head_of_household
+    deduction_method = db.Column(db.Text, default='standard', nullable=False)  # 'standard' or 'itemized'
     email = db.Column(db.Text, nullable=True)
     phone = db.Column(db.Text, nullable=True)
     address = db.Column(db.Text, nullable=True)
@@ -68,6 +69,7 @@ class Client(db.Model):
             'first_name': self.first_name,
             'last_name': self.last_name,
             'filing_status': self.filing_status,
+            'deduction_method': self.deduction_method,
             'email': self.email,
             'phone': self.phone,
             'address': self.address,

@@ -1483,6 +1483,125 @@ h3 {
     padding: 1rem 0;
 }
 
+/* ===========================================
+   JOINT STRATEGIES SECTION (REQ-22, REQ-23)
+   =========================================== */
+
+.joint-strategies-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #e0e0e0;
+}
+
+.joint-strategies-section h4 {
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+}
+
+.section-note {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.joint-strategies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.joint-strategy-card {
+    padding: 1rem;
+    border-radius: 6px;
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-left: 4px solid #2196f3;
+}
+
+.joint-strategy-card.mfs-warning {
+    background: #fff8e1;
+    border-left-color: #ff9800;
+}
+
+.joint-strategy-card.status-good {
+    border-left-color: #4caf50;
+}
+
+.joint-strategy-card.status-warning {
+    border-left-color: #f44336;
+}
+
+.joint-strategy-card.status-neutral {
+    border-left-color: #95a5a6;
+}
+
+.joint-strategy-card .strategy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.joint-strategy-card .strategy-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: #2c3e50;
+}
+
+.mfj-only-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    background: #2196f3;
+    color: white;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
+.feasibility-warning {
+    background: #ffecb3;
+    padding: 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.warning-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: #ff9800;
+    color: white;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+
+.joint-strategy-card .strategy-description {
+    color: #555;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+.strategy-benefit {
+    font-weight: 500;
+    color: #4caf50;
+    margin-bottom: 0.25rem;
+}
+
+.strategy-recommendation {
+    font-size: 0.85rem;
+    color: #333;
+    font-style: italic;
+}
+
 /* Responsive: stack at 768px */
 @media (max-width: 768px) {
     .joint-analysis-page {

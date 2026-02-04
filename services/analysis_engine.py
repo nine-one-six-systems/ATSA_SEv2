@@ -13,16 +13,25 @@ class AnalysisEngine:
     @staticmethod
     def _calculate_data_version_hash(client_id):
         """
-        Calculate a hash of all ExtractedData timestamps for a client to detect data changes
-        
+        Calculate a hash of all ExtractedData timestamps for a client to detect data changes.
+
+        REQ-08: If client has spouse_id, spouse's data is ALSO included in hash.
+        This ensures changing either spouse's data invalidates both cached analyses.
+
         Args:
             client_id: ID of the client
-        
+
         Returns:
-            str: SHA-256 hash of sorted timestamps
+            str: SHA-256 hash of sorted timestamps (including spouse if linked)
         """
         extracted_data = ExtractedData.query.filter_by(client_id=client_id).all()
-        
+
+        # REQ-08: Include spouse data for bidirectional cache invalidation
+        client = Client.query.get(client_id)
+        if client and client.spouse_id:
+            spouse_data = ExtractedData.query.filter_by(client_id=client.spouse_id).all()
+            extracted_data.extend(spouse_data)
+
         if not extracted_data:
             return hashlib.sha256(b'').hexdigest()
         

@@ -49,6 +49,38 @@ Document discoveries, patterns, and anti-patterns encountered during development
 - **Result:** Unlimited readers, multiple writers with short transactions work without blocking
 - **When to migrate to PostgreSQL:** If WAL + short transactions still show lock contention
 
+### Tax Compliance Insights
+
+**SALT Cap Varies by Filing Status AND Year**
+- **Discovery:** One Big Beautiful Bill Act (OBBBA) changes SALT cap for 2025-2029, then reverts in 2030
+- **Context:** Phase 2 research for MFS compliance revealed complex year-based + status-based cap rules
+- **2026 caps:** MFJ/Single $40,400, MFS $20,000 per spouse (with income phase-out)
+- **Critical error avoided:** Applying full $40,400 to each MFS spouse (doubles deduction incorrectly)
+- **Implementation:** Year-based lookup table, filing-status-specific caps, MAGI phase-out calculation
+- **Source:** [IRS Schedule A Instructions](https://www.irs.gov/instructions/i1040sca)
+
+**Deduction Method Coordination is Mandatory for MFS**
+- **Discovery:** IRS rule requires both MFS spouses to use the same deduction method (both standard OR both itemized)
+- **Context:** Phase 2 compliance requirement — software must enforce, not just warn
+- **Impact:** Cannot allow Spouse A to itemize while Spouse B takes standard deduction
+- **Enforcement strategy:** Service-layer validation on deduction_method change, cascade to spouse or block change
+- **UI pattern:** Display coordination status, require confirmation if change affects spouse
+- **Source:** [IRS FAQ - Other Deduction Questions](https://www.irs.gov/faqs/itemized-deductions-standard-deduction/other-deduction-questions)
+
+**Expense Allocation Requires Tracking Payment Source**
+- **Discovery:** IRS allocates joint expenses based on who paid, not just equal split assumption
+- **Context:** Mortgage interest, property taxes can be 100% taxpayer, 100% spouse, or custom % split
+- **Default rule:** Joint payment from joint account = 50/50 split
+- **Exception:** If one spouse paid from separate account, that spouse claims 100%
+- **Implementation:** JSON allocation metadata per expense type (flexible schema without 10+ columns)
+- **Source:** [IRS FAQ - Real Estate Taxes, Mortgage Interest](https://www.irs.gov/faqs/itemized-deductions-standard-deduction/real-estate-taxes-mortgage-interest-points-other-property-expenses)
+
+**Phase 1 Only Implemented Standard Deduction Path**
+- **Discovery:** JointAnalysisService.analyze_joint() hardcodes standard deduction, no itemized path
+- **Context:** Phase 2 must add entire itemized deduction calculation flow
+- **Net-new work:** Itemized deduction model/storage, SALT cap calculation, medical expense threshold, coordination validation
+- **Build order:** Add deduction_method to Client → itemized calculation service → extend JointAnalysisService
+
 ## What Doesn't Work
 
 ### Dual-Filer Tax Domain Anti-Patterns
@@ -87,6 +119,20 @@ Document discoveries, patterns, and anti-patterns encountered during development
 - **Why it fails:** MFS cap is $20,000 per spouse (exactly half), not full $40k
 - **Impact:** Overstates MFS itemized deductions by up to $20,000, recommends MFS when MFJ is better
 - **Correct approach:** SALT cap by filing status (MFJ: $40k, MFS: $20k each)
+
+**Assuming 50/50 Split for All Joint Expenses**
+- **What fails:** Defaulting to equal split for all joint expenses without checking payment source
+- **Why it fails:** IRS requires allocation based on who paid, not assumption
+- **Real impact:** Spouse deducts mortgage interest they didn't pay, violates IRS rules
+- **Correct approach:** Track allocation method (taxpayer/spouse/both/joint) with percentage split
+- **Source:** Phase 2 research finding
+
+**Ignoring SALT Income Phase-Out**
+- **What fails:** High-income MFS filer claims full $20,000 SALT deduction at $400k MAGI
+- **Why it fails:** OBBBA includes income phase-out: $0.30 reduction per $1 over threshold
+- **Impact:** Phase-out reduces $20k cap to $5k floor for high earners (MFS threshold $250k MAGI)
+- **Correct approach:** Include MAGI in SALT cap calculation, apply phase-out formula
+- **Source:** Phase 2 research finding
 
 ## Phase Learnings
 
@@ -242,6 +288,75 @@ Document discoveries, patterns, and anti-patterns encountered during development
 
 **Confidence Assessment:** HIGH — All implementation questions answered, patterns verified in codebase, no blocking unknowns.
 
+### Phase 2 Research: MFS-Specific Compliance Logic
+
+**Phase:** Phase 2 Research
+**Domain:** MFS compliance rules (deduction coordination, SALT caps, expense allocation)
+**Date:** 2026-02-04
+
+**Key Discoveries:**
+
+1. **Deduction Method Coordination is Mandatory IRS Rule**
+   - **Discovery:** Both MFS spouses MUST use same deduction method (both standard OR both itemized)
+   - **Source:** IRS FAQ verified — not optional, enforcement required
+   - **Implementation:** Service-layer validation on deduction_method change, block or cascade
+   - **Database:** Add `deduction_method` column to Client model ('standard' or 'itemized')
+   - **Confidence:** HIGH — Official IRS source
+
+2. **SALT Cap Doubles for MFJ, Halves for MFS (2026 OBBBA)**
+   - **Discovery:** 2026 caps are $40,400 MFJ/Single, $20,000 per MFS spouse (NOT $40,400 each)
+   - **Phase-out:** Reduces $0.30 per $1 over MAGI threshold ($505k MFJ, $250k MFS) to floor ($10k/$5k)
+   - **Critical error avoided:** Applying full cap to each MFS spouse doubles deduction incorrectly
+   - **Implementation:** Filing-status-aware SALT cap calculation with MAGI phase-out
+   - **Confidence:** HIGH — Multiple authoritative sources agree
+
+3. **Expense Allocation Based on Payment Source**
+   - **Discovery:** IRS allocates joint expenses by who paid, not automatic 50/50
+   - **Default:** Joint payment from joint account = 50/50 split
+   - **Exception:** Separate payment from separate account = 100% to payer
+   - **Custom:** Can allocate by percentage (60/40, 70/30, etc.) based on actual ownership/payment
+   - **Implementation:** JSON metadata field storing allocation_method + percentages
+   - **Confidence:** MEDIUM — IRS guidance clear, implementation pattern inferred
+
+4. **Phase 1 Only Has Standard Deduction Path**
+   - **Discovery:** JointAnalysisService.analyze_joint() hardcodes standard deduction, no itemized logic
+   - **Impact:** Phase 2 is net-new work, not just adding validation to existing itemized path
+   - **Build requirements:** Itemized deduction calculation, SALT cap enforcement, medical expense threshold (7.5% AGI), coordination validation
+   - **Model additions:** Client.deduction_method, ItemizedDeduction table (or ExtractedData naming convention)
+   - **Confidence:** HIGH — Verified in existing codebase
+
+5. **No External Dependencies Needed**
+   - **Discovery:** All compliance logic can build on existing stack (Flask-SQLAlchemy, TaxCalculator)
+   - **JSON storage:** Use built-in JSON fields for allocation metadata (no new libraries)
+   - **Service layer:** Extend JointAnalysisService, no architectural changes
+   - **Confidence:** HIGH — Implementation patterns verified in Phase 1 codebase
+
+**Pitfalls Identified:**
+
+1. **Not enforcing deduction coordination on data change** — Spouses get out of sync, IRS rejection
+2. **Applying full SALT cap to each MFS spouse** — Overstates itemized deductions by up to $20k
+3. **Assuming 50/50 split for all joint expenses** — Violates IRS allocation rules
+4. **Allowing itemized deductions without SALT cap enforcement** — Inflates tax benefit unrealistically
+5. **Missing income phase-out for high-income SALT filers** — OBBBA phase-out ignored
+
+**Open Questions:**
+
+1. **Community property states (9 states)** — Does ATSA serve these? Need Form 8958? → Defer to Phase 4
+2. **Medical expense allocation for MFS** — IRS rules unclear, likely "who paid" → Research IRS Pub 502
+3. **Dependent allocation enforcement** — No Dependent model exists → Add in Phase 2 if needed
+4. **Itemized vs standard comparison UI** — How to display 6 scenarios cleanly? → Phase 3 UI design
+5. **SALT cap reversion in 2030** — Prepare year-based lookup table → Add reminder for 2029 review
+
+**Recommendations for Phase 2 Implementation:**
+
+1. **Model Changes:** Add Client.deduction_method, use ExtractedData with naming convention for itemized amounts (MVP), defer ItemizedDeduction table to Phase 3+
+2. **Service Layer:** Create validation methods (deduction coordination, SALT cap by status, expense allocation), extend JointAnalysisService.analyze_joint() with itemized path
+3. **No External Deps:** Use existing stack, JSON for allocation metadata
+4. **Testing Priority:** Deduction coordination enforcement, SALT cap by filing status + income phase-out, expense allocation scenarios
+5. **Documentation:** Code examples for 3 compliance patterns (coordination, SALT cap, allocation)
+
+**Confidence Assessment:** HIGH — IRS rules verified with official sources, implementation patterns clear from existing codebase, gaps identified for planning.
+
 ---
 
 ## Pattern Library
@@ -266,6 +381,20 @@ Document discoveries, patterns, and anti-patterns encountered during development
 - **Example:** QBI thresholds: `{'single': 191950, 'married_joint': 383900, 'married_separate': 191950}`
 - **When to use:** Any tax calculation involving thresholds (QBI, IRA, AMT, SALT cap)
 
+**Pattern: JSON Metadata for Flexible Allocation**
+- **Use case:** Track expense allocation between multiple parties with varying rules
+- **Implementation:** JSON field storing allocation_method + percentages per expense type
+- **Example:** `{"mortgage_interest": {"allocation": "both", "taxpayer_pct": 60, "spouse_pct": 40}}`
+- **When to use:** Allocation rules are complex, vary by item, may evolve over time
+- **Source:** Phase 2 research finding
+
+**Pattern: Service-Layer Validation with Cascading**
+- **Use case:** Business rule requires coordination between linked entities (e.g., spouses)
+- **Implementation:** Validation method returns allow/block/confirm_cascade decision
+- **Example:** Spouse A itemizes → validation checks Spouse B → returns cascade requirement
+- **When to use:** Rule affects multiple entities, needs user confirmation, complex logic
+- **Source:** Phase 2 research finding
+
 ### Anti-Patterns to Avoid
 
 **Anti-Pattern: Inline Business Logic in Routes**
@@ -283,7 +412,19 @@ Document discoveries, patterns, and anti-patterns encountered during development
 - **Why it's bad:** Expensive computation for data that may never be viewed
 - **Correct approach:** Lazy evaluation — calculate on-demand when user navigates to joint analysis page, cache with hash
 
+**Anti-Pattern: Hard-Coding Year-Specific Tax Rules**
+- **What it looks like:** `SALT_CAP = 40400` as constant without year context
+- **Why it's bad:** Tax rules change by year (TCJA → OBBBA → 2030 reversion), hard to maintain
+- **Correct approach:** Year-based lookup table or dictionary, explicit tax_year parameter
+- **Source:** Phase 2 research finding (SALT caps vary 2024 → 2026 → 2030)
+
+**Anti-Pattern: Database Constraints for Complex Business Rules**
+- **What it looks like:** Foreign key constraint enforcing "both spouses must itemize"
+- **Why it's bad:** Database can't express complex logic, poor error messages, inflexible
+- **Correct approach:** Service-layer validation with clear messages and cascade options
+- **Source:** Phase 2 research finding
+
 ---
 
 *Last updated: 2026-02-04*
-*Next update: After Phase 1 implementation*
+*Next update: After Phase 2 planning*

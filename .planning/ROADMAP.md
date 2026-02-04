@@ -20,6 +20,14 @@ This milestone adds dual-filer support for married couples, enabling a tax profe
 
 **Dependencies:** None (foundation phase)
 
+**Plans:** 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Infrastructure & Model (WAL mode, JointAnalysisSummary, model registration)
+- [ ] 01-02-PLAN.md — Service Layer (JointAnalysisService with MFJ/MFS calculation, cache invalidation)
+- [ ] 01-03-PLAN.md — Credit Eligibility (credit filtering, QBI threshold enforcement)
+- [ ] 01-04-PLAN.md — API Endpoints (blueprint registration, routes, comparison output)
+
 **Requirements:**
 | ID | Requirement |
 |----|-------------|
@@ -67,6 +75,11 @@ This milestone adds dual-filer support for married couples, enabling a tax profe
 
 **Dependencies:** Phase 1 (MFS calculation engine must exist before compliance rules can be layered on)
 
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (awaiting /gsd:plan-phase)
+
 **Requirements:**
 | ID | Requirement |
 |----|-------------|
@@ -97,6 +110,11 @@ This milestone adds dual-filer support for married couples, enabling a tax profe
 **Goal:** A tax professional sees both spouses' individual tax pictures side-by-side on one screen with a consolidated MFJ vs MFS comparison below -- the centerpiece view they use with clients.
 
 **Dependencies:** Phase 1 (API endpoints must return joint analysis data), Phase 2 (compliance rules must be enforced so displayed numbers are correct)
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (awaiting /gsd:plan-phase)
 
 **Requirements:**
 | ID | Requirement |
@@ -132,6 +150,11 @@ This milestone adds dual-filer support for married couples, enabling a tax profe
 **Goal:** Each spouse sees personalized strategy recommendations for their income type, the couple sees joint optimization strategies available only when filing together, and the full workflow -- linking spouses, entering data, viewing analysis -- is smooth end-to-end.
 
 **Dependencies:** Phase 1 (calculation engine for strategy inputs), Phase 3 (UI must exist to display strategies and workflow improvements)
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (awaiting /gsd:plan-phase)
 
 **Requirements:**
 | ID | Requirement |
@@ -220,4 +243,4 @@ Orphaned: 0
 ---
 
 *Roadmap created: 2026-02-04*
-*Next: Plan Phase 1*
+*Next: Execute Phase 1*

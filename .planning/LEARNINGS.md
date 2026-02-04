@@ -581,5 +581,51 @@ Document discoveries, patterns, and anti-patterns encountered during development
 
 ---
 
+## Iteration Log Entry
+
+**Iteration:** 13
+**Phase:** 4 Plan: 01
+**Action:** EXECUTE
+**Outcome:** Success
+**Duration:** 2m 39s
+
+### Learnings from This Execution
+
+**What Worked:**
+- Using db.session.flush() to get auto-generated IDs before commit - enables bidirectional linking in single transaction
+- Returning redirect URL from API response - frontend stays simple, backend controls navigation
+- Two-column modal layout using CSS Grid - clean visual pairing of spouse data
+
+**What Didn't Work:**
+- N/A - execution was smooth
+
+**Codebase Discovery:**
+- Flask server runs on port 5555 (not 5001 as in some plan examples) - check app.py for actual port
+- Client model has deduction_method field already (from Phase 2) - returned in to_dict()
+- window.onclick pattern for multiple modals - use === instead of == for strict comparison
+
+**Prompt Tuning:**
+- N/A
+
+---
+
+### Phase 4 Plan 01 Summary
+
+**Plan:** Spouse Linking Workflow
+**Requirements Implemented:** REQ-24
+
+**Key Implementation Details:**
+- POST /api/clients/create-couple creates both spouses atomically
+- Bidirectional spouse_id linking via flush/commit pattern
+- Shared filing status (MFJ/MFS) dropdown applies to both spouses
+- Immediate redirect to joint-analysis.html with spouse IDs in URL
+
+**Files Modified:**
+- routes/clients.py (+69 lines)
+- templates/clients.html (+76 lines)
+- static/js/clients.js (+67 lines)
+
+---
+
 *Last updated: 2026-02-04*
-*Next update: After Phase 4 planning*
+*Next update: After Phase 4 Plan 02*

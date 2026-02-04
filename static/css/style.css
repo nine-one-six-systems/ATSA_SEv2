@@ -1307,6 +1307,37 @@ h3 {
     font-style: italic;
 }
 
+.summary-sublabel {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.comparison-notes {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+    border-left: 3px solid #f39c12;
+}
+
+.comparison-notes h4 {
+    margin-bottom: 0.75rem;
+    color: #2c3e50;
+    font-size: 0.95rem;
+}
+
+.comparison-notes ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.comparison-notes li {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+    color: #555;
+}
+
 /* Comparison table (REQ-20) */
 .comparison-table {
     width: 100%;

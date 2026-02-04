@@ -5,6 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Upload Documents - ATSA</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+    .data-entry-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 0;
+    }
+    .tab-btn {
+        padding: 0.75rem 1.5rem;
+        border: 1px solid #ddd;
+        background: #f5f5f5;
+        cursor: pointer;
+        border-radius: 4px 4px 0 0;
+        margin-right: -1px;
+        font-size: 1rem;
+    }
+    .tab-btn:hover {
+        background: #e8e8e8;
+    }
+    .tab-btn.active {
+        background: white;
+        border-bottom-color: white;
+        font-weight: bold;
+    }
+    .tab-content {
+        border: 1px solid #ddd;
+        padding: 1.5rem;
+        border-radius: 0 4px 4px 4px;
+        background: white;
+    }
+    .form-section {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #eee;
+    }
+    .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    .form-section h5 {
+        margin-bottom: 0.75rem;
+        color: #555;
+        font-size: 1rem;
+    }
+    .manual-entry-form input[type="number"] {
+        width: 100%;
+        max-width: 200px;
+        padding: 0.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .help-text {
+        color: #666;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+    #attribution-group {
+        margin-top: 1rem;
+    }
+    #attribution-group select {
+        width: 100%;
+        max-width: 300px;
+    }
+    .form-actions {
+        margin-top: 1.5rem;
+        display: flex;
+        gap: 1rem;
+    }
+    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -24,7 +93,7 @@
     <main class="container">
         <div class="upload-page">
             <h2>Upload Tax Documents</h2>
-            
+
             <div class="upload-section">
                 <div class="form-group">
                     <label for="client-select">Select Client *</label>
@@ -32,33 +101,94 @@
                         <option value="">Select a client...</option>
                     </select>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="tax-year">Tax Year</label>
-                    <input type="number" id="tax-year" min="2000" max="2030" value="2024">
+                    <input type="number" id="tax-year" min="2000" max="2030" value="2026">
                 </div>
-                
-                <div class="upload-area" id="upload-area">
-                    <div class="upload-content">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="17 8 12 3 7 8"></polyline>
-                            <line x1="12" y1="3" x2="12" y2="15"></line>
-                        </svg>
-                        <p>Drag and drop files here or click to browse</p>
-                        <p class="upload-hint">Supported formats: PDF, JPG, PNG (Max 16MB)</p>
+
+                <div class="form-group" id="attribution-group" style="display: none;">
+                    <label for="attribution-select">Document belongs to:</label>
+                    <select id="attribution-select">
+                        <option value="taxpayer">Taxpayer (Primary Client)</option>
+                        <option value="spouse">Spouse</option>
+                        <option value="joint">Joint (Both)</option>
+                    </select>
+                    <p class="help-text">Select which spouse this document or income data is for</p>
+                </div>
+
+                <div class="data-entry-tabs">
+                    <button class="tab-btn active" id="upload-tab-btn" onclick="showUploadTab()">Document Upload</button>
+                    <button class="tab-btn" id="manual-tab-btn" onclick="showManualTab()">Manual Entry</button>
+                </div>
+
+                <div id="upload-tab" class="tab-content">
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-content">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="17 8 12 3 7 8"></polyline>
+                                <line x1="12" y1="3" x2="12" y2="15"></line>
+                            </svg>
+                            <p>Drag and drop files here or click to browse</p>
+                            <p class="upload-hint">Supported formats: PDF, JPG, PNG (Max 16MB)</p>
+                        </div>
+                        <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png" multiple style="display: none;">
                     </div>
-                    <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png" multiple style="display: none;">
+
+                    <div id="file-list" class="file-list"></div>
+
+                    <div class="upload-actions">
+                        <button class="btn btn-primary" id="upload-btn" onclick="uploadFiles()" disabled>Upload Files</button>
+                        <button class="btn btn-secondary" onclick="clearFiles()">Clear</button>
+                    </div>
                 </div>
-                
-                <div id="file-list" class="file-list"></div>
-                
-                <div class="upload-actions">
-                    <button class="btn btn-primary" id="upload-btn" onclick="uploadFiles()" disabled>Upload Files</button>
-                    <button class="btn btn-secondary" onclick="clearFiles()">Clear</button>
+
+                <div id="manual-tab" class="tab-content" style="display: none;">
+                    <h4>Enter Income Data Manually</h4>
+                    <p class="help-text" style="margin-bottom: 1.5rem;">Use this form when physical documents are unavailable. Data will be saved for tax analysis.</p>
+
+                    <div class="manual-entry-form">
+                        <div class="form-section">
+                            <h5>W-2 Income</h5>
+                            <div class="form-group">
+                                <label for="manual-wages">Wages (Box 1)</label>
+                                <input type="number" id="manual-wages" placeholder="0.00" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="manual-federal-withheld">Federal Tax Withheld (Box 2)</label>
+                                <input type="number" id="manual-federal-withheld" placeholder="0.00" step="0.01" min="0">
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h5>Self-Employment Income</h5>
+                            <div class="form-group">
+                                <label for="manual-schedule-c">Net Profit (Schedule C Line 31)</label>
+                                <input type="number" id="manual-schedule-c" placeholder="0.00" step="0.01">
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h5>Other Income</h5>
+                            <div class="form-group">
+                                <label for="manual-interest">Interest Income (1099-INT)</label>
+                                <input type="number" id="manual-interest" placeholder="0.00" step="0.01" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="manual-dividends">Dividend Income (1099-DIV)</label>
+                                <input type="number" id="manual-dividends" placeholder="0.00" step="0.01" min="0">
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button class="btn btn-primary" onclick="saveManualEntry()">Save Income Data</button>
+                            <button class="btn btn-secondary" onclick="clearManualEntry()">Clear</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
+
             <div class="documents-section">
                 <h3>Uploaded Documents</h3>
                 <div id="documents-list" class="documents-list">
@@ -71,4 +201,3 @@
     <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
 </body>
 </html>
-

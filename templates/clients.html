@@ -26,6 +26,7 @@
             <div class="page-header">
                 <h2>Client Management</h2>
                 <button class="btn btn-primary" onclick="showClientModal()">Add New Client</button>
+                <button class="btn btn-secondary" onclick="showCoupleModal()">Create Married Couple</button>
             </div>
 
             <div class="client-selector" style="margin-bottom: 2rem;">
@@ -102,6 +103,81 @@
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeClientModal()">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Client</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Couple Modal -->
+    <div id="couple-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close" onclick="closeCoupleModal()">&times;</span>
+            <h2>Create Married Couple</h2>
+            <form id="couple-form" onsubmit="createCouple(event)">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <!-- Spouse 1 Column -->
+                    <div class="spouse-column">
+                        <h3>Spouse 1 (Taxpayer)</h3>
+
+                        <div class="form-group">
+                            <label for="spouse1-first-name">First Name *</label>
+                            <input type="text" id="spouse1-first-name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="spouse1-last-name">Last Name *</label>
+                            <input type="text" id="spouse1-last-name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="spouse1-email">Email</label>
+                            <input type="email" id="spouse1-email">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="spouse1-phone">Phone</label>
+                            <input type="tel" id="spouse1-phone">
+                        </div>
+                    </div>
+
+                    <!-- Spouse 2 Column -->
+                    <div class="spouse-column">
+                        <h3>Spouse 2</h3>
+
+                        <div class="form-group">
+                            <label for="spouse2-first-name">First Name *</label>
+                            <input type="text" id="spouse2-first-name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="spouse2-last-name">Last Name *</label>
+                            <input type="text" id="spouse2-last-name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="spouse2-email">Email</label>
+                            <input type="email" id="spouse2-email">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="spouse2-phone">Phone</label>
+                            <input type="tel" id="spouse2-phone">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shared Filing Status -->
+                <div class="form-group" style="margin-top: 1.5rem;">
+                    <label for="couple-filing-status">Filing Status *</label>
+                    <select id="couple-filing-status" required>
+                        <option value="married_joint" selected>Married Filing Jointly</option>
+                        <option value="married_separate">Married Filing Separately</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCoupleModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Couple & View Analysis</button>
                 </div>
             </form>
         </div>

@@ -10,24 +10,24 @@
 
 **Core Value:** A tax professional can see both spouses' individual tax pictures side-by-side and instantly understand their combined joint liability -- one screen, complete picture.
 
-**Current Focus:** Phase 4 executing (2/4 plans complete).
+**Current Focus:** Phase 4 executing (3/4 plans complete).
 
 ---
 
 ## Current Position
 
 **Phase:** 4 of 4 -- Dual-Filer Strategies and Workflow
-**Plan:** 2 of 4 (04-02 complete)
+**Plan:** 3 of 4 (04-03 complete)
 **Status:** In progress
 
 ```
 Phase 1 [############] 100%  Core Calculation Engine (DONE)
 Phase 2 [############] 100%  MFS Compliance Logic (DONE)
 Phase 3 [############] 100%  Split-Screen UI (VERIFIED)
-Phase 4 [######......] 50%   Strategies and Workflow (in progress)
+Phase 4 [#########...] 75%   Strategies and Workflow (in progress)
 ```
 
-**Overall:** 23/26 requirements implemented (88%)
+**Overall:** 24/26 requirements implemented (92%)
 
 ---
 
@@ -35,9 +35,9 @@ Phase 4 [######......] 50%   Strategies and Workflow (in progress)
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 12 |
+| Plans completed | 13 |
 | Plans with issues | 1 (std deduction data - fixed) |
-| Requirements done | 23/26 |
+| Requirements done | 24/26 |
 | Phases done | 3/4 |
 
 ---
@@ -58,6 +58,8 @@ Phase 4 [######......] 50%   Strategies and Workflow (in progress)
 | Shared filing status in couple creation | Simpler UX - both spouses get same status initially |
 | ExtractedData.document_id nullable | Required for manual entries without uploaded documents |
 | Attribution stored on Document | Document carries tag; extracted data routes to target client at processing time |
+| Form types map to income types | W-2 -> w2_employee, Schedule C -> self_employed, etc. |
+| Strategies prioritized by income relevance | Relevant strategies first, then by priority |
 
 ### Architecture Notes
 
@@ -68,6 +70,7 @@ Phase 4 [######......] 50%   Strategies and Workflow (in progress)
 - All tax calculation server-side in Python -- frontend only displays results
 - JavaScript uses async/await for all API calls
 - Attribution pattern: Document.attribution determines which client gets extracted data
+- Income type detection queries ExtractedData for form types to personalize strategies
 
 ### Todos
 
@@ -84,7 +87,8 @@ Phase 4 [######......] 50%   Strategies and Workflow (in progress)
 - [x] Plan Phase 4 (4 plans, 3 waves)
 - [x] Execute Phase 4 Plan 01 (spouse linking workflow)
 - [x] Execute Phase 4 Plan 02 (document attribution & manual entry)
-- [ ] Execute Phase 4 Plans 03-04
+- [x] Execute Phase 4 Plan 03 (per-spouse strategy enhancement)
+- [ ] Execute Phase 4 Plan 04 (summary report generation)
 
 ### Blockers
 
@@ -94,25 +98,25 @@ None.
 
 ## Session Continuity
 
-**Last Action:** Completed 04-02-PLAN.md (document attribution & manual entry).
+**Last Action:** Completed 04-03-PLAN.md (per-spouse strategy enhancement).
 
-**Next Action:** Execute Phase 4 Wave 2 (04-03: strategy comparison cards).
+**Next Action:** Execute Phase 4 Wave 3 (04-04: summary report generation).
 
-**Context for Next Session:** Phase 4 Plan 02 complete. Document attribution and manual entry functional:
-- Document model has attribution column (taxpayer/spouse/joint)
-- Upload endpoint validates and stores attribution
-- Manual entry endpoint creates ExtractedData records without documents
-- Attribution selector appears when client has linked spouse
-- Tab-based UI for Document Upload vs Manual Entry
+**Context for Next Session:** Phase 4 Plan 03 complete. Per-spouse strategy enhancement functional:
+- TaxStrategiesService has detect_income_types(), filter_strategies_by_income_type(), get_personalized_strategies()
+- INCOME_TYPE_STRATEGIES maps income types to relevant strategy IDs
+- Joint analysis API returns income_types in spouse1/spouse2 objects
+- UI displays personalized strategies with income type badges and relevance indicators
+- REQ-21 complete: LLC owner sees SEP-IRA/QBI prioritized, W-2 employee sees 401(k) prioritized
 
 ---
 
 ## Autopilot Status
 
 Mode: Active
-Iteration: 14 of 50
+Iteration: 15 of 50
 Started: 2026-02-04
-Last position: Phase: 4 of 4 | Plan: 2 of 4
+Last position: Phase: 4 of 4 | Plan: 3 of 4
 Stuck count: 0
 Current action: EXECUTE
 Unattended: false

@@ -41,24 +41,24 @@ Requirements for Tax Calculator dual-entry mode. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CALC-01 | TBD | Pending |
-| CALC-02 | TBD | Pending |
-| CALC-03 | TBD | Pending |
-| CALC-04 | TBD | Pending |
-| CALC-05 | TBD | Pending |
-| CALC-06 | TBD | Pending |
-| RSLT-01 | TBD | Pending |
-| RSLT-02 | TBD | Pending |
-| RSLT-03 | TBD | Pending |
-| SAVE-01 | TBD | Pending |
-| SAVE-02 | TBD | Pending |
-| SAVE-03 | TBD | Pending |
+| CALC-01 | Phase 5 | Pending |
+| CALC-02 | Phase 5 | Pending |
+| CALC-03 | Phase 5 | Pending |
+| CALC-04 | Phase 5 | Pending |
+| CALC-05 | Phase 5 | Pending |
+| CALC-06 | Phase 5 | Pending |
+| RSLT-01 | Phase 5 | Pending |
+| RSLT-02 | Phase 5 | Pending |
+| RSLT-03 | Phase 5 | Pending |
+| SAVE-01 | Phase 6 | Pending |
+| SAVE-02 | Phase 6 | Pending |
+| SAVE-03 | Phase 6 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 12 total
-- Mapped to phases: 0
-- Unmapped: 12
+- Mapped to phases: 12
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-04*
-*Last updated: 2026-02-04 after initial definition*
+*Last updated: 2026-02-04 after roadmap creation*

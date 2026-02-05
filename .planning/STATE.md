@@ -1,7 +1,7 @@
 # Project State
 
 **Project:** ATSA - Advanced Tax Strategy Analyzer
-**Version:** v1.0 shipped
+**Version:** v1.1 in progress
 **Updated:** 2026-02-04
 
 ---
@@ -10,47 +10,40 @@
 
 See: .planning/PROJECT.md (updated 2026-02-04)
 
-**Core value:** A tax professional can see both spouses' individual tax pictures side-by-side and instantly understand their combined joint liability -- one screen, complete picture.
+**Core value:** A tax professional can see both spouses' individual tax pictures side-by-side and instantly understand their combined joint liability — one screen, complete picture.
 
-**Current focus:** Planning next milestone
+**Current focus:** v1.1 Tax Calculator Dual-Entry Mode
 
 ---
 
 ## Current Position
 
-**Phase:** Next milestone not started
-**Status:** v1.0 complete, planning next
+**Phase:** Not started (defining requirements)
+**Status:** Defining requirements
 
 ```
-v1.0 Dual-Filer MFJ/MFS Support [################] SHIPPED 2026-02-04
-  - Phase 1: Core Calculation Engine (4 plans) - DONE
-  - Phase 2: MFS Compliance Logic (3 plans) - DONE
-  - Phase 3: Split-Screen UI (2 plans) - DONE
-  - Phase 4: Strategies and Workflow (4 plans) - DONE
+v1.1 Tax Calculator Dual-Entry Mode [                ] 0%
+  - Requirements: defining
+  - Roadmap: pending
 ```
-
-**Overall:** 26/26 requirements shipped (100%)
 
 ---
 
-## Performance Metrics
+## v1.0 Summary (Shipped 2026-02-04)
 
-| Metric | Value |
-|--------|-------|
-| Plans completed | 13 |
-| Plans with issues | 1 (std deduction data - fixed) |
-| Requirements done | 26/26 |
-| Phases done | 4/4 |
+- 26/26 requirements shipped
+- 4 phases, 13 plans completed
+- Full dual-filer MFJ/MFS support
 
 ---
 
 ## Session Continuity
 
-**Last Action:** Completed v1.0 milestone, archived roadmap and requirements.
+**Last Action:** Started v1.1 milestone definition.
 
-**Next Action:** `/gsd:new-milestone` to define v1.1 or v2.0 scope.
+**Next Action:** Define requirements and create roadmap.
 
-**Context for Next Session:** v1.0 shipped with full dual-filer support. All 26 requirements implemented and verified. ROADMAP.md and REQUIREMENTS.md archived to milestones/ folder. Fresh requirements needed for next milestone.
+**Context for Next Session:** v1.1 focuses on Tax Calculator dual-entry mode — split view when MFJ/MFS selected, per-spouse breakdown + joint totals, apply to client functionality.
 
 ---
 
@@ -58,8 +51,8 @@ v1.0 Dual-Filer MFJ/MFS Support [################] SHIPPED 2026-02-04
 
 Mode: Inactive
 Last run: 2026-02-04
-Result: Milestone complete (16 iterations)
+Result: v1.0 milestone complete
 
 ---
 
-*State updated: 2026-02-04 after v1.0 milestone*
+*State updated: 2026-02-04 after v1.1 milestone start*

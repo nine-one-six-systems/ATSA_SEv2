@@ -8,9 +8,18 @@ A Flask-based tax analysis tool for tax professionals that handles client manage
 
 A tax professional can see both spouses' individual tax pictures side-by-side and instantly understand their combined joint liability — one screen, complete picture.
 
-## Current State (v1.0 Shipped)
+## Current Milestone: v1.1 Tax Calculator Dual-Entry Mode
 
-**v1.0 Dual-Filer MFJ/MFS Support** shipped 2026-02-04 with:
+**Goal:** Transform the Tax Calculator into a dual-pane tool when filing status involves two spouses — quick calculations with option to persist to clients.
+
+**Target features:**
+- Filing status triggers split view (MFJ/MFS → dual pane, Single/HoH → single pane)
+- Per-spouse breakdown + joint totals display
+- Apply to Client functionality (save quick calculations to client records)
+
+## Previous: v1.0 (Shipped 2026-02-04)
+
+**v1.0 Dual-Filer MFJ/MFS Support** delivered:
 - Joint MFJ/MFS tax calculation with accurate bracket computations
 - MFS compliance: deduction coordination, SALT cap halving, expense allocation
 - Split-screen UI with resizable panels and responsive mobile layout
@@ -61,7 +70,10 @@ A tax professional can see both spouses' individual tax pictures side-by-side an
 
 ### Active
 
-(None — define in next milestone)
+- [ ] Tax Calculator split view on MFJ/MFS selection
+- [ ] Per-spouse tax breakdown in calculator
+- [ ] Joint totals display in calculator
+- [ ] Apply to Client functionality
 
 ### Out of Scope
 
@@ -94,4 +106,4 @@ A tax professional can see both spouses' individual tax pictures side-by-side an
 - **UI pattern**: Split-screen in Jinja2 + vanilla CSS/JS
 
 ---
-*Last updated: 2026-02-04 after v1.0 milestone*
+*Last updated: 2026-02-04 after v1.1 milestone start*

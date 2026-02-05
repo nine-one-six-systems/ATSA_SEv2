@@ -160,6 +160,26 @@ Document discoveries, patterns, and anti-patterns encountered during development
 - **Correct approach:** Only show attribution selector when client.spouse_id exists
 - **Source:** Phase 4 research finding
 
+### Calculator Dual-Pane Anti-Patterns
+
+**Applying MFJ Standard Deduction Per Spouse**
+- **What fails:** Giving each spouse the full $32,200 MFJ standard deduction when calculating joint tax
+- **Why it fails:** MFJ standard deduction is $32,200 TOTAL for the couple, not per person. Doubling it to $64,400 dramatically underestimates tax.
+- **Correct approach:** Combine incomes, subtract ONE $32,200 standard deduction, then apply MFJ brackets.
+- **Source:** Phase 5 research finding
+
+**Combining FICA/SE Taxes for MFJ**
+- **What fails:** Adding both spouses' salaries together and calculating FICA on the combined total
+- **Why it fails:** FICA/SE taxes are ALWAYS per-individual. Each spouse has their own Social Security wage base cap ($175k for 2026).
+- **Correct approach:** Calculate FICA/SE per spouse individually, then sum. MFJ only combines INCOME TAX.
+- **Source:** Phase 5 research (IRS: "Payroll taxes are still calculated per individual")
+
+**Dual API Calls from Frontend for MFJ**
+- **What fails:** Making two separate /calculate calls and combining results in JavaScript for MFJ
+- **Why it fails:** MFJ requires combining incomes BEFORE calculating tax (different brackets, different QBI threshold). Two separate calls cannot compute joint income tax correctly.
+- **Correct approach:** Single /calculate-dual endpoint that receives both spouses' data and orchestrates server-side
+- **Source:** Phase 5 research finding
+
 ## Phase Learnings
 
 ### Project Research: Dual-Filer Tax Analysis with MFJ vs MFS Comparison
@@ -449,6 +469,68 @@ Document discoveries, patterns, and anti-patterns encountered during development
 
 **Confidence Assessment:** HIGH — Existing codebase patterns clear, IRS rules verified, no architectural changes needed.
 
+### Phase 5 Research: Calculator Dual-Pane Mode
+
+**Phase:** Phase 5 Research
+**Domain:** Dual-pane tax calculator UI with MFJ/MFS per-spouse input and combined results
+**Date:** 2026-02-05
+
+**Key Discoveries:**
+
+1. **TaxCalculator Requires No Modifications**
+   - All 4 income source types (W2, LLC, LLC S-Corp, S-Corp) already handled
+   - All filing statuses already have correct brackets, QBI thresholds, deductions
+   - Phase 5 is purely UI transformation + API orchestration, zero tax logic changes
+
+2. **MFJ = Combined Income Tax + Per-Individual Payroll Tax**
+   - IRS rule: MFJ combines all income into single AGI, applies ONE standard deduction ($32,200), uses MFJ brackets
+   - IRS rule: FICA/SE taxes are ALWAYS per-individual (each spouse has own SS wage base cap)
+   - Critical: Do NOT apply $32,200 standard deduction per spouse (would double it to $64,400)
+
+3. **New /calculate-dual Endpoint, Not Extension of Existing**
+   - Fundamentally different input shape (two sets of income data vs one)
+   - MFJ requires income combination before calculation
+   - Clean separation preserves existing single-person calculator (no regression)
+   - Server calculates both MFJ and MFS scenarios, returns comparison
+
+4. **Dependents Are Household-Level for MFJ, Allocated for MFS**
+   - MFJ: All dependents claimed on joint return (single count)
+   - MFS: Each child claimed by one spouse only
+   - Calculator MVP: Shared dependents dropdown, default allocation to one spouse for MFS
+
+5. **Split.js Pattern Proven in joint_analysis.js**
+   - CDN link, localStorage persistence, responsive destroy/recreate at 768px
+   - Same pattern reusable for calculator dual-pane
+   - Must destroy before re-init when toggling filing statuses
+
+6. **Form Transformation UX: Filing Status at Top, Dynamic Content Below**
+   - Filing status toggle stays at page level (above split)
+   - Single/HoH/QSS: show single-pane form (existing behavior)
+   - MFJ/MFS: hide single-pane, show dual-pane Split.js layout
+   - Matches industry pattern (TurboTax, TaxSlayer Pro)
+
+7. **Always Calculate Both MFJ and MFS When Dual-Pane Active**
+   - Since we have both spouses' data, always compute both scenarios
+   - Comparison (recommended status, savings amount) is the core value proposition
+   - Single API call returns everything: per-spouse breakdowns + MFJ totals + MFS totals + comparison
+
+**Pitfalls Identified:**
+
+1. Applying MFJ standard deduction per spouse (doubles it)
+2. Combining FICA/SE taxes for MFJ (should be per-individual)
+3. Different income sources per spouse handled incorrectly
+4. Dependent double-counting in MFS
+5. Regression on single-pane filing statuses
+6. Split.js not destroyed before re-init
+7. QBI calculation with mixed income sources
+
+**Architecture:**
+- No new files needed (modify 4 existing files: calculator.html, calculator.js, calculator.py, style.css)
+- New API endpoint /api/calculator/calculate-dual in existing calculator.py route file
+- Form HTML structure: shared controls (filing status, dependents) above, pane content (income, source, state) below
+
+**Confidence Assessment:** HIGH -- TaxCalculator verified, Split.js pattern proven, IRS rules confirmed, architecture extends existing patterns.
+
 ---
 
 ## Pattern Library
@@ -500,6 +582,13 @@ Document discoveries, patterns, and anti-patterns encountered during development
 - **Example:** `{'spousal_ira': {'requires': 'married_joint', 'warning': 'Requires MFJ'}}`
 - **When to use:** Filing-status-dependent feature eligibility
 - **Source:** Phase 4 research finding
+
+**Pattern: Form Transformation on Toggle Selection**
+- **Use case:** Changing a toggle option transforms the form layout (single-pane to dual-pane)
+- **Implementation:** Filing status toggle at top; show/hide different form sections below based on selection
+- **Example:** MFJ/MFS selected → hide single-pane, show Split.js dual-pane; Single selected → reverse
+- **When to use:** Same page needs fundamentally different input layouts based on a mode selector
+- **Source:** Phase 5 research finding
 
 ### Anti-Patterns to Avoid
 
@@ -748,5 +837,5 @@ Document discoveries, patterns, and anti-patterns encountered during development
 
 ---
 
-*Last updated: 2026-02-04*
+*Last updated: 2026-02-05*
 *Milestone completed: 2026-02-04*

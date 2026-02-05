@@ -27,11 +27,11 @@ Transform the Tax Calculator into a dual-pane tool when filing status involves t
   4. Single/HoH/QSS filing statuses display existing single-pane calculator (no regression)
   5. Results display per-spouse breakdown (federal, state, effective rate) and joint totals (combined federal, combined state, total tax)
   6. When both MFJ and MFS can be calculated, results show comparison between the two filing methods
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 05-01: TBD
-- [ ] 05-02: TBD
+- [ ] 05-01-PLAN.md -- Backend /calculate-dual endpoint + HTML template restructure + CSS styles
+- [ ] 05-02-PLAN.md -- Full calculator.js rewrite with dual-pane logic, results display, and MFJ vs MFS comparison
 
 ### Phase 6: Apply to Client
 **Goal**: Calculator results can be persisted to client records for permanent storage
@@ -53,7 +53,7 @@ Phases execute in numeric order: 5 -> 6
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 5. Calculator Dual-Pane Mode | v1.1 | 0/TBD | Not started | - |
+| 5. Calculator Dual-Pane Mode | v1.1 | 0/2 | Planning complete | - |
 | 6. Apply to Client | v1.1 | 0/TBD | Not started | - |
 
 ---

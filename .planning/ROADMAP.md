@@ -30,7 +30,7 @@ Transform the Tax Calculator into a dual-pane tool when filing status involves t
 **Plans**: 2 plans
 
 Plans:
-- [ ] 05-01-PLAN.md -- Backend /calculate-dual endpoint + HTML template restructure + CSS styles
+- [x] 05-01-PLAN.md -- Backend /calculate-dual endpoint + HTML template restructure + CSS styles
 - [ ] 05-02-PLAN.md -- Full calculator.js rewrite with dual-pane logic, results display, and MFJ vs MFS comparison
 
 ### Phase 6: Apply to Client
@@ -53,7 +53,7 @@ Phases execute in numeric order: 5 -> 6
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 5. Calculator Dual-Pane Mode | v1.1 | 0/2 | Planning complete | - |
+| 5. Calculator Dual-Pane Mode | v1.1 | 1/2 | In progress | - |
 | 6. Apply to Client | v1.1 | 0/TBD | Not started | - |
 
 ---

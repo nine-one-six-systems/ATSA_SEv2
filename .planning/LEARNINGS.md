@@ -837,5 +837,34 @@ Document discoveries, patterns, and anti-patterns encountered during development
 
 ---
 
+## Iteration Log Entry
+
+**Iteration:** v1.1-1
+**Phase:** 5 Plan: 01
+**Action:** EXECUTE
+**Outcome:** Success
+**Duration:** ~5 minutes
+
+### Learnings from This Execution
+
+**What Worked:**
+- Module-level helper functions in routes file keep route handler clean and testable
+- Flask test_client() for instant verification without starting server
+- Breaking MFJ calculation into clear steps: combine income → ONE deduction → QBI → brackets → per-individual FICA → per-individual state
+
+**What Didn't Work:**
+- N/A - execution was smooth
+
+**Codebase Discovery:**
+- TaxCalculator.calculate_federal_tax returns `gross_income` key which equals salary+distributions for S-Corp — use this for state tax input
+- `calculate_qbi_deduction()` returns a dict with `deduction_amount` key, not a raw number
+- W2 income source returns fica_tax: 0 and se_tax: 0 from calculate_federal_tax (employer pays)
+- calculator.html now has filing status + dependents in shared controls div above both form modes
+
+**Prompt Tuning:**
+- When building dual-mode endpoints, use separate helper functions per calculation type rather than one monolithic function
+
+---
+
 *Last updated: 2026-02-05*
 *Milestone completed: 2026-02-04*

@@ -27,49 +27,8 @@
                 <h2>Tax Liability Calculator</h2>
             </div>
 
-            <form id="calculator-form" class="calculator-form">
-                <!-- Income Field with Frequency Toggle -->
-                <div class="form-group">
-                    <label for="income-amount">Income *</label>
-                    <div class="income-input-group">
-                        <input type="number" id="income-amount" step="0.01" min="0" required placeholder="Enter income amount">
-                        <div class="frequency-toggle">
-                            <button type="button" class="toggle-btn active" data-frequency="annual">Annual</button>
-                            <button type="button" class="toggle-btn" data-frequency="monthly">Monthly</button>
-                            <button type="button" class="toggle-btn" data-frequency="bi_monthly">Bi-Monthly</button>
-                            <button type="button" class="toggle-btn" data-frequency="bi_weekly">Bi-Weekly</button>
-                            <button type="button" class="toggle-btn" data-frequency="weekly">Weekly</button>
-                        </div>
-                    </div>
-                    <input type="hidden" id="income-frequency" value="annual">
-                </div>
-
-                <!-- Income Source Dropdown -->
-                <div class="form-group">
-                    <label for="income-source">Income Source *</label>
-                    <select id="income-source" required>
-                        <option value="w2" selected>Employee (W2)</option>
-                        <option value="llc">LLC</option>
-                        <option value="llc_s_corp">LLC as an S-Corp</option>
-                        <option value="s_corp">S-Corp</option>
-                    </select>
-                </div>
-
-                <!-- Salary and Distributions Fields (conditional) -->
-                <div class="form-group" id="salary-distributions-group" style="display: none;">
-                    <label>Salary and Distributions *</label>
-                    <div class="salary-distributions-inputs">
-                        <div class="form-group-inline">
-                            <label for="salary-amount">Salary:</label>
-                            <input type="number" id="salary-amount" step="0.01" min="0" placeholder="Enter salary amount">
-                        </div>
-                        <div class="form-group-inline">
-                            <label for="distributions-amount">Distributions (Calculated):</label>
-                            <input type="number" id="distributions-amount" step="0.01" min="0" readonly placeholder="Calculated automatically">
-                        </div>
-                    </div>
-                </div>
-
+            <!-- Shared Controls: Filing Status + Dependents (above both form modes) -->
+            <div class="calculator-shared-controls">
                 <!-- Filing Status Toggle -->
                 <div class="form-group">
                     <label>Filing Status *</label>
@@ -105,38 +64,194 @@
                         <option value="15">15</option>
                     </select>
                 </div>
+            </div>
 
-                <!-- State Selection -->
-                <div class="form-group">
-                    <label for="state-select">State</label>
-                    <select id="state-select">
-                        <option value="">Select a state...</option>
-                    </select>
+            <!-- Single-Pane Form (default, shown for Single/HoH/QSS) -->
+            <form id="calculator-form" class="calculator-form">
+                <div id="single-pane-form">
+                    <!-- Income Field with Frequency Toggle -->
+                    <div class="form-group">
+                        <label for="income-amount">Income *</label>
+                        <div class="income-input-group">
+                            <input type="number" id="income-amount" step="0.01" min="0" required placeholder="Enter income amount">
+                            <div class="frequency-toggle">
+                                <button type="button" class="toggle-btn active" data-frequency="annual">Annual</button>
+                                <button type="button" class="toggle-btn" data-frequency="monthly">Monthly</button>
+                                <button type="button" class="toggle-btn" data-frequency="bi_monthly">Bi-Monthly</button>
+                                <button type="button" class="toggle-btn" data-frequency="bi_weekly">Bi-Weekly</button>
+                                <button type="button" class="toggle-btn" data-frequency="weekly">Weekly</button>
+                            </div>
+                        </div>
+                        <input type="hidden" id="income-frequency" value="annual">
+                    </div>
+
+                    <!-- Income Source Dropdown -->
+                    <div class="form-group">
+                        <label for="income-source">Income Source *</label>
+                        <select id="income-source" required>
+                            <option value="w2" selected>Employee (W2)</option>
+                            <option value="llc">LLC</option>
+                            <option value="llc_s_corp">LLC as an S-Corp</option>
+                            <option value="s_corp">S-Corp</option>
+                        </select>
+                    </div>
+
+                    <!-- Salary and Distributions Fields (conditional) -->
+                    <div class="form-group" id="salary-distributions-group" style="display: none;">
+                        <label>Salary and Distributions *</label>
+                        <div class="salary-distributions-inputs">
+                            <div class="form-group-inline">
+                                <label for="salary-amount">Salary:</label>
+                                <input type="number" id="salary-amount" step="0.01" min="0" placeholder="Enter salary amount">
+                            </div>
+                            <div class="form-group-inline">
+                                <label for="distributions-amount">Distributions (Calculated):</label>
+                                <input type="number" id="distributions-amount" step="0.01" min="0" readonly placeholder="Calculated automatically">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- State Selection -->
+                    <div class="form-group">
+                        <label for="state-select">State</label>
+                        <select id="state-select">
+                            <option value="">Select a state...</option>
+                        </select>
+                    </div>
+
+                    <!-- Multiple States Checkbox -->
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="multiple-states">
+                            <span>Multiple States</span>
+                        </label>
+                    </div>
+
+                    <!-- Multiple States Selection (hidden by default) -->
+                    <div class="form-group" id="multiple-states-group" style="display: none;">
+                        <label>Select States</label>
+                        <div id="selected-states-list" class="selected-states-list"></div>
+                        <select id="add-state-select">
+                            <option value="">Add a state...</option>
+                        </select>
+                        <button type="button" class="btn btn-secondary" id="add-state-btn">Add State</button>
+                    </div>
                 </div>
 
-                <!-- Multiple States Checkbox -->
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="multiple-states">
-                        <span>Multiple States</span>
-                    </label>
-                </div>
-
-                <!-- Multiple States Selection (hidden by default) -->
-                <div class="form-group" id="multiple-states-group" style="display: none;">
-                    <label>Select States</label>
-                    <div id="selected-states-list" class="selected-states-list"></div>
-                    <select id="add-state-select">
-                        <option value="">Add a state...</option>
-                    </select>
-                    <button type="button" class="btn btn-secondary" id="add-state-btn">Add State</button>
-                </div>
-
-                <!-- Submit Button -->
+                <!-- Submit Button (shared) -->
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Analyze</button>
                 </div>
             </form>
+
+            <!-- Dual-Pane Form (hidden by default, shown for MFJ/MFS) -->
+            <div id="dual-pane-form" style="display: none;">
+                <div class="calculator-split-container" id="calc-split-container">
+                    <div id="husband-pane" class="spouse-calc-panel">
+                        <h4>Husband</h4>
+                        <!-- Income -->
+                        <div class="form-group">
+                            <label for="husband-income">Income *</label>
+                            <div class="income-input-group">
+                                <input type="number" id="husband-income" step="0.01" min="0" placeholder="Enter income amount">
+                                <div class="frequency-toggle" data-spouse="husband">
+                                    <button type="button" class="toggle-btn active" data-frequency="annual">Annual</button>
+                                    <button type="button" class="toggle-btn" data-frequency="monthly">Monthly</button>
+                                    <button type="button" class="toggle-btn" data-frequency="bi_monthly">Bi-Monthly</button>
+                                    <button type="button" class="toggle-btn" data-frequency="bi_weekly">Bi-Weekly</button>
+                                    <button type="button" class="toggle-btn" data-frequency="weekly">Weekly</button>
+                                </div>
+                            </div>
+                            <input type="hidden" id="husband-frequency" value="annual">
+                        </div>
+                        <!-- Income Source -->
+                        <div class="form-group">
+                            <label for="husband-source">Income Source *</label>
+                            <select id="husband-source">
+                                <option value="w2" selected>Employee (W2)</option>
+                                <option value="llc">LLC</option>
+                                <option value="llc_s_corp">LLC as an S-Corp</option>
+                                <option value="s_corp">S-Corp</option>
+                            </select>
+                        </div>
+                        <!-- S-Corp Fields -->
+                        <div class="form-group" id="husband-salary-group" style="display: none;">
+                            <label>Salary and Distributions *</label>
+                            <div class="salary-distributions-inputs">
+                                <div class="form-group-inline">
+                                    <label for="husband-salary">Salary:</label>
+                                    <input type="number" id="husband-salary" step="0.01" min="0" placeholder="Enter salary amount">
+                                </div>
+                                <div class="form-group-inline">
+                                    <label for="husband-distributions">Distributions (Calculated):</label>
+                                    <input type="number" id="husband-distributions" step="0.01" min="0" readonly placeholder="Calculated automatically">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- State -->
+                        <div class="form-group">
+                            <label for="husband-state">State</label>
+                            <select id="husband-state">
+                                <option value="">Select a state...</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="wife-pane" class="spouse-calc-panel">
+                        <h4>Wife</h4>
+                        <!-- Income -->
+                        <div class="form-group">
+                            <label for="wife-income">Income *</label>
+                            <div class="income-input-group">
+                                <input type="number" id="wife-income" step="0.01" min="0" placeholder="Enter income amount">
+                                <div class="frequency-toggle" data-spouse="wife">
+                                    <button type="button" class="toggle-btn active" data-frequency="annual">Annual</button>
+                                    <button type="button" class="toggle-btn" data-frequency="monthly">Monthly</button>
+                                    <button type="button" class="toggle-btn" data-frequency="bi_monthly">Bi-Monthly</button>
+                                    <button type="button" class="toggle-btn" data-frequency="bi_weekly">Bi-Weekly</button>
+                                    <button type="button" class="toggle-btn" data-frequency="weekly">Weekly</button>
+                                </div>
+                            </div>
+                            <input type="hidden" id="wife-frequency" value="annual">
+                        </div>
+                        <!-- Income Source -->
+                        <div class="form-group">
+                            <label for="wife-source">Income Source *</label>
+                            <select id="wife-source">
+                                <option value="w2" selected>Employee (W2)</option>
+                                <option value="llc">LLC</option>
+                                <option value="llc_s_corp">LLC as an S-Corp</option>
+                                <option value="s_corp">S-Corp</option>
+                            </select>
+                        </div>
+                        <!-- S-Corp Fields -->
+                        <div class="form-group" id="wife-salary-group" style="display: none;">
+                            <label>Salary and Distributions *</label>
+                            <div class="salary-distributions-inputs">
+                                <div class="form-group-inline">
+                                    <label for="wife-salary">Salary:</label>
+                                    <input type="number" id="wife-salary" step="0.01" min="0" placeholder="Enter salary amount">
+                                </div>
+                                <div class="form-group-inline">
+                                    <label for="wife-distributions">Distributions (Calculated):</label>
+                                    <input type="number" id="wife-distributions" step="0.01" min="0" readonly placeholder="Calculated automatically">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- State -->
+                        <div class="form-group">
+                            <label for="wife-state">State</label>
+                            <select id="wife-state">
+                                <option value="">Select a state...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button for dual pane -->
+                <div class="form-actions" style="margin-top: 1rem;">
+                    <button type="button" id="dual-analyze-btn" class="btn btn-primary">Analyze</button>
+                </div>
+            </div>
 
             <!-- Results Section -->
             <div id="calculator-results" class="calculator-results" style="display: none;">
@@ -145,6 +260,7 @@
         </div>
     </main>
 
+    <script src="https://unpkg.com/split.js@1.6.5/dist/split.min.js"></script>
     <script src="{{ url_for('static', filename='js/calculator.js') }}"></script>
 </body>
 </html>

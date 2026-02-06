@@ -150,3 +150,240 @@ def calculate_tax():
             'success': False,
             'error': str(e)
         }), 400
+
+
+def _get_annual_income(spouse_data):
+    """Convert spouse data to annual income, handling S-Corp types."""
+    income = float(spouse_data.get('income', 0))
+    income_frequency = spouse_data.get('income_frequency', 'annual')
+    income_source = spouse_data.get('income_source', 'w2')
+    salary = float(spouse_data.get('salary', 0))
+    distributions = float(spouse_data.get('distributions', 0))
+
+    if income_source in ['llc_s_corp', 's_corp']:
+        return salary + distributions
+    return TaxCalculator.convert_income_to_annual(income, income_frequency)
+
+
+def _get_qbi_eligible_income(spouse_data, annual_income):
+    """Get QBI-eligible income: LLC=full, S-Corp types=distributions, W2=0."""
+    source = spouse_data.get('income_source', 'w2')
+    if source == 'llc':
+        return annual_income
+    elif source in ['llc_s_corp', 's_corp']:
+        return float(spouse_data.get('distributions', 0))
+    return 0.0
+
+
+def _calculate_spouse_payroll_tax(spouse_data, annual_income, filing_status, tax_year):
+    """Calculate FICA or SE tax for one spouse based on income source."""
+    source = spouse_data.get('income_source', 'w2')
+    salary = float(spouse_data.get('salary', 0))
+
+    if source == 'w2':
+        return {'fica_tax': 0.0, 'se_tax': 0.0, 'total': 0.0}
+    elif source == 'llc':
+        se = TaxCalculator.calculate_self_employment_tax(annual_income, tax_year)
+        return {'fica_tax': 0.0, 'se_tax': se['net_se_tax'], 'total': se['net_se_tax']}
+    elif source in ['llc_s_corp', 's_corp']:
+        fica = TaxCalculator.calculate_fica_tax(salary, filing_status, tax_year)
+        return {'fica_tax': fica['total_fica_tax'], 'se_tax': 0.0, 'total': fica['total_fica_tax']}
+    return {'fica_tax': 0.0, 'se_tax': 0.0, 'total': 0.0}
+
+
+def _calculate_spouse_individual(spouse_data, filing_status, dependents, tax_year):
+    """Calculate one spouse's full tax for MFS scenario."""
+    annual_income = _get_annual_income(spouse_data)
+    income_source = spouse_data.get('income_source', 'w2')
+    salary = float(spouse_data.get('salary', 0))
+    distributions = float(spouse_data.get('distributions', 0))
+    state_code = spouse_data.get('state_code', None)
+
+    federal = TaxCalculator.calculate_federal_tax(
+        annual_income, filing_status, dependents, tax_year,
+        income_source=income_source, salary=salary, distributions=distributions
+    )
+
+    state_result = None
+    state_tax = 0.0
+    if state_code:
+        income_for_state = federal.get('gross_income', annual_income)
+        state_result = TaxCalculator.calculate_state_tax(
+            income_for_state, filing_status, dependents, state_code, tax_year
+        )
+        if state_result:
+            state_tax = state_result['total_tax']
+
+    total_tax = federal['total_tax'] + state_tax
+    effective_rate = (total_tax / annual_income * 100) if annual_income > 0 else 0.0
+
+    return {
+        'federal': federal,
+        'state': state_result,
+        'annual_income': annual_income,
+        'totals': {
+            'federal_tax': federal['total_tax'],
+            'state_tax': state_tax,
+            'total_tax': round(total_tax, 2),
+            'effective_rate': round(effective_rate, 2)
+        }
+    }
+
+
+def _calculate_mfj_combined(husband_data, wife_data, dependents, tax_year):
+    """Calculate MFJ combined: ONE standard deduction on combined income, FICA per-individual."""
+    h_income = _get_annual_income(husband_data)
+    w_income = _get_annual_income(wife_data)
+    combined_income = h_income + w_income
+
+    # ONE standard deduction for the couple
+    standard_deduction = TaxCalculator.get_standard_deduction('married_joint', 'federal', None, tax_year)
+
+    # Combined QBI from both spouses
+    h_qbi = _get_qbi_eligible_income(husband_data, h_income)
+    w_qbi = _get_qbi_eligible_income(wife_data, w_income)
+    combined_qbi = h_qbi + w_qbi
+
+    # Taxable income before QBI
+    taxable_before_qbi = max(0, combined_income - standard_deduction)
+
+    # QBI deduction on combined
+    qbi_result = TaxCalculator.calculate_qbi_deduction(combined_qbi, taxable_before_qbi, 'married_joint', tax_year)
+    qbi_deduction = qbi_result['deduction_amount']
+
+    # Taxable income after standard deduction and QBI
+    taxable_income = max(0, combined_income - standard_deduction - qbi_deduction)
+
+    # Income tax using MFJ brackets
+    brackets = TaxCalculator.get_tax_brackets('federal', None, 'married_joint', tax_year)
+    tax_result = TaxCalculator.calculate_tax_by_brackets(taxable_income, brackets)
+
+    # Child tax credit (non-refundable)
+    child_credit = TaxCalculator.calculate_child_tax_credit(dependents, tax_year)
+    income_tax_before_credit = tax_result['total_tax']
+    income_tax = max(0.0, income_tax_before_credit - child_credit)
+    credit_applied = min(child_credit, income_tax_before_credit)
+
+    # FICA/SE per-individual (CRITICAL: never combine)
+    h_payroll = _calculate_spouse_payroll_tax(husband_data, h_income, 'married_joint', tax_year)
+    w_payroll = _calculate_spouse_payroll_tax(wife_data, w_income, 'married_joint', tax_year)
+
+    # State tax per-individual
+    h_state_code = husband_data.get('state_code')
+    w_state_code = wife_data.get('state_code')
+    h_state_result = None
+    w_state_result = None
+    h_state_tax = 0.0
+    w_state_tax = 0.0
+
+    if h_state_code:
+        h_state_result = TaxCalculator.calculate_state_tax(h_income, 'married_joint', dependents, h_state_code, tax_year)
+        if h_state_result:
+            h_state_tax = h_state_result['total_tax']
+    if w_state_code:
+        w_state_result = TaxCalculator.calculate_state_tax(w_income, 'married_joint', 0, w_state_code, tax_year)
+        if w_state_result:
+            w_state_tax = w_state_result['total_tax']
+
+    total_fica_se = h_payroll['total'] + w_payroll['total']
+    total_state_tax = h_state_tax + w_state_tax
+    total_tax = income_tax + total_fica_se + total_state_tax
+    effective_rate = (total_tax / combined_income * 100) if combined_income > 0 else 0.0
+
+    husband_breakdown = {
+        'annual_income': h_income,
+        'income_source': husband_data.get('income_source', 'w2'),
+        'federal_income_tax_share': 'Joint return - income tax is on combined income',
+        'fica_tax': h_payroll['fica_tax'],
+        'se_tax': h_payroll['se_tax'],
+        'state_tax': h_state_tax,
+        'state_code': h_state_code,
+        'state_detail': h_state_result
+    }
+
+    wife_breakdown = {
+        'annual_income': w_income,
+        'income_source': wife_data.get('income_source', 'w2'),
+        'federal_income_tax_share': 'Joint return - income tax is on combined income',
+        'fica_tax': w_payroll['fica_tax'],
+        'se_tax': w_payroll['se_tax'],
+        'state_tax': w_state_tax,
+        'state_code': w_state_code,
+        'state_detail': w_state_result
+    }
+
+    totals = {
+        'combined_income': round(combined_income, 2),
+        'standard_deduction': standard_deduction,
+        'combined_qbi_deduction': qbi_deduction,
+        'taxable_income': round(taxable_income, 2),
+        'income_tax_before_credit': round(income_tax_before_credit, 2),
+        'child_tax_credit': child_credit,
+        'child_tax_credit_applied': round(credit_applied, 2),
+        'income_tax': round(income_tax, 2),
+        'total_fica_se': round(total_fica_se, 2),
+        'total_state_tax': round(total_state_tax, 2),
+        'total_tax': round(total_tax, 2),
+        'effective_rate': round(effective_rate, 2),
+        'marginal_tax_rate': round(tax_result['marginal_rate'] * 100, 2),
+        'bracket_breakdown': tax_result['bracket_breakdown']
+    }
+
+    return {
+        'husband_breakdown': husband_breakdown,
+        'wife_breakdown': wife_breakdown,
+        'totals': totals
+    }
+
+
+@calculator_bp.route('/calculator/calculate-dual', methods=['POST'])
+def calculate_dual_tax():
+    """Calculate dual-spouse tax liability with MFJ and MFS comparison."""
+    try:
+        data = request.get_json()
+
+        husband = data.get('husband', {})
+        wife = data.get('wife', {})
+        dependents = int(data.get('dependents', 0))
+        tax_year = int(data.get('tax_year', 2026))
+
+        # Always calculate MFJ
+        mfj = _calculate_mfj_combined(husband, wife, dependents, tax_year)
+
+        # Always calculate MFS (dependents default to husband)
+        mfs_husband = _calculate_spouse_individual(husband, 'married_separate', dependents, tax_year)
+        mfs_wife = _calculate_spouse_individual(wife, 'married_separate', 0, tax_year)
+
+        # Build comparison
+        mfj_total = mfj['totals']['total_tax']
+        mfs_total = mfs_husband['totals']['total_tax'] + mfs_wife['totals']['total_tax']
+        savings = abs(mfj_total - mfs_total)
+
+        if mfj_total <= mfs_total:
+            recommended = 'MFJ'
+            reason = f'Filing jointly saves ${savings:,.2f} compared to filing separately'
+        else:
+            recommended = 'MFS'
+            reason = f'Filing separately saves ${savings:,.2f} compared to filing jointly'
+
+        comparison = {
+            'mfj_total_tax': round(mfj_total, 2),
+            'mfs_combined_tax': round(mfs_total, 2),
+            'savings': round(savings, 2),
+            'recommended': recommended,
+            'reason': reason
+        }
+
+        return jsonify({
+            'success': True,
+            'mfj': mfj,
+            'mfs_husband': mfs_husband,
+            'mfs_wife': mfs_wife,
+            'comparison': comparison
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
